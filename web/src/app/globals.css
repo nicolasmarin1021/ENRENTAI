@@ -1,0 +1,116 @@
+/*
+  ENRENTA — base visual.
+  Tono: claro, amable y confiable (inspirado en el prototipo "suave").
+  Una sola familia (Figtree), paneles blancos sin bordes, sombras casi invisibles,
+  controles en píldora y un solo acento lavanda para lo que se puede tocar.
+*/
+:root {
+  --bg: #F7F7F9;
+  --surface: #FFFFFF;
+  --surface-2: #F4F5F8;
+  --ink: #2A2E35;
+  --muted: #6B7178;
+  --line: #EDEFF3;
+  --line-strong: #DCDFE5;
+  --accent: #5B78F0;
+  --accent-2: #8EA2F8;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #EEF1FE;
+  --ok: #2E9B6A;
+  --ok-soft: #E7F6EE;
+  --warn: #A8670A;
+  --warn-soft: #FFF4E0;
+  --bad: #D0493B;
+  --bad-soft: #FDEEEC;
+  --shadow: 0 0 0 1px rgba(16, 24, 40, .04), 0 12px 32px -14px rgba(16, 24, 40, .16);
+  --soft: 0 0 0 1px rgba(16, 24, 40, .06), 0 4px 13px -5px rgba(0, 0, 0, .10);
+  --r: 20px;
+  --r-sm: 14px;
+  --font: var(--font-figtree), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(900px 520px at 90% -10%, #E4EAFF 0%, rgba(228, 234, 255, 0) 62%),
+    radial-gradient(760px 480px at -10% 6%, #F3ECFE 0%, rgba(243, 236, 254, 0) 58%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--ink);
+  font: 15.5px/1.5 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -.015em; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--accent); }
+img { max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* cabecera */
+.site-hdr {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, .82);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+  box-shadow: 0 1px 0 rgba(16, 24, 40, .05);
+}
+.site-hdr-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 12px; flex: none;
+  display: grid; place-items: center;
+  color: var(--accent-ink);
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  box-shadow: 0 8px 16px -8px rgba(91, 120, 240, .7);
+}
+.brand-mark.lg { width: 56px; height: 56px; border-radius: 18px; }
+.brand-txt { display: flex; flex-direction: column; gap: 2px; }
+.brand-name { font-weight: 700; font-size: 20px; line-height: 1; letter-spacing: .04em; }
+.brand-sub { font-size: 12.5px; color: var(--muted); }
+.stage-pill { font-size: 12.5px; font-weight: 500; color: var(--muted); background: var(--surface-2); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+
+.site-main { flex: 1; padding-block: 28px 40px; }
+.site-foot { padding-block: 20px 28px; color: var(--muted); font-size: 13px; }
+
+/* piezas comunes */
+.lead { font-size: 17px; color: var(--muted); }
+.title-xl { font-weight: 500; font-size: clamp(34px, 5vw, 52px); line-height: 1.05; letter-spacing: -.045em; }
+.title-xl em, .hl {
+  font-style: normal;
+  background: linear-gradient(90deg, var(--accent), #A08BF6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.back-link { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 14px; }
+.back-link:hover { color: var(--ink); }
+.note {
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+
+@media (max-width: 520px) {
+  .brand-sub, .stage-pill { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

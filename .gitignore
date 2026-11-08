@@ -1,0 +1,9 @@
+# dependencias y compilados (la app tiene además su propio web/.gitignore)
+node_modules/
+.next/
+# claves y configuración local: nunca se suben al repositorio
+.env*
+!.env.example
+.claude/
+.DS_Store
+Thumbs.db

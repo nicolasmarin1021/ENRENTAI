@@ -1,0 +1,61 @@
+.landing {
+  min-height: calc(100dvh - 220px);
+  display: grid;
+  place-items: center;
+  padding-block: 12px;
+}
+.card {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 18px;
+}
+.choices {
+  display: grid;
+  gap: 12px;
+  margin-top: 6px;
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.choice:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(91, 120, 240, .35), 0 14px 30px -14px rgba(16, 24, 40, .22);
+}
+.choiceIco {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.choiceTxt {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.choiceTxt b { font-size: 18px; font-weight: 600; line-height: 1.25; }
+.choiceTxt span { font-size: 14.5px; color: var(--muted); }
+.go { font-size: 20px; color: var(--accent); }
+.trust {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+}
+.trust li { display: flex; align-items: center; gap: 8px; font-size: 14.5px; }
+.trust svg { color: var(--ok); flex: none; }
