@@ -195,7 +195,7 @@ export function PasoQue({
 // ============================================================================
 // Paso 2: ¿Cuándo?
 // ============================================================================
-const HORAS = Array.from({ length: 36 }, (_, i) => {
+export const HORAS = Array.from({ length: 36 }, (_, i) => {
   const h = 6 + Math.floor(i / 2);
   return `${String(h).padStart(2, "0")}:${i % 2 ? "30" : "00"}`;
 }); // 06:00 a 23:30

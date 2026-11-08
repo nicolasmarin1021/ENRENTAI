@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { Categoria } from "@/lib/catalogo";
 import type { Catalogo } from "@/lib/catalogo-publico";
@@ -25,7 +26,11 @@ export function Explorador({
   conSesion: boolean;
 }) {
   const [pedido, guardar] = usePedido();
-  const [pasoElegido, setPaso] = useState<Paso | null>(null);
+  // /explorar?paso=3 abre directamente ese paso (lo usa el rider para "Otro lugar").
+  const pasoUrl = Number(useSearchParams().get("paso"));
+  const [pasoElegido, setPaso] = useState<Paso | null>(() =>
+    pasoUrl === 1 || pasoUrl === 2 || pasoUrl === 3 ? pasoUrl : null,
+  );
   const completo = pedido.listo && pedido.lugar !== null && pedido.necesidades.length > 0 && pedido.entrega !== "";
   const paso: Paso = pasoElegido ?? (completo ? "mapa" : 1);
   const equipos = useMemo(() => catalogo.companias.flatMap((c) => c.equipos), [catalogo]);

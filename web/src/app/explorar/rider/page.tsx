@@ -18,5 +18,5 @@ export default function Rider() {
 async function Contenido() {
   await connection();
   const [catalogo, s] = await Promise.all([getCatalogo(), getSesion()]);
-  return <RiderVista catalogo={catalogo} conSesion={s !== null} />;
+  return <RiderVista catalogo={catalogo} conSesion={s !== null} nombreCliente={s?.nombre ?? ""} />;
 }

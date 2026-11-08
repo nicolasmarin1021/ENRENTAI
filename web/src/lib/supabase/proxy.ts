@@ -3,12 +3,10 @@ import { createServerClient } from "@supabase/ssr";
 import { supabaseConfigured, supabaseKey, supabaseUrl } from "./config";
 
 // Rutas que exigen haber entrado, y a qué entrada se envía a quien no tiene sesión.
+// Todo lo que está debajo de /tengo/ y /necesito/ (sus portadas de entrada no).
 const CON_CUENTA: [string, string][] = [
-  ["/tengo/panel", "/tengo"],
-  ["/tengo/registro", "/tengo"],
-  ["/tengo/inventario", "/tengo"],
-  ["/tengo/reservas", "/tengo"],
-  ["/necesito/reservas", "/necesito"],
+  ["/tengo", "/tengo"],
+  ["/necesito", "/necesito"],
   ["/reservas", "/necesito"],
 ];
 
@@ -48,7 +46,7 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
 
   const ruta = request.nextUrl.pathname;
-  const protegida = CON_CUENTA.find(([p]) => ruta === p || ruta.startsWith(p + "/"));
+  const protegida = CON_CUENTA.find(([p]) => ruta.startsWith(p + "/"));
   if (!data?.claims && protegida) {
     const destino = request.nextUrl.clone();
     destino.pathname = protegida[1];

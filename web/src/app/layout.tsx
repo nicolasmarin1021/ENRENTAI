@@ -3,7 +3,7 @@ import { Figtree } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
 import { BrandMark } from "@/components/brand";
-import { EtapaPill, SesionHdr } from "@/components/sesion-hdr";
+import { SesionHdr } from "@/components/sesion-hdr";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -20,8 +20,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={figtree.variable}>
       <body>
-        <header className="site-hdr">
-          <div className="wrap site-hdr-in">
+        <header className="hdr">
+          <div className="wrap hdr-row">
             <Link href="/" className="brand" aria-label="ENRENTA, ir al inicio">
               <BrandMark />
               <span className="brand-txt">
@@ -29,7 +29,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <span className="brand-sub">Renta de audio y RF · Medellín</span>
               </span>
             </Link>
-            <Suspense fallback={<EtapaPill />}>
+            {/* Interruptor de modo, cuenta y pestañas: dependen de la sesión y de la página. */}
+            <Suspense fallback={null}>
               <SesionHdr />
             </Suspense>
           </div>

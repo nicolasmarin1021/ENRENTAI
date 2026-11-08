@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { NavTengo } from "@/components/nav-tengo";
 import { nombreEstado, urlFoto } from "@/lib/catalogo";
 import { getCategorias } from "@/lib/categorias";
 import { pesos } from "@/lib/medellin";
@@ -14,7 +13,6 @@ export const metadata: Metadata = { title: "Inventario" };
 export default function Inventario() {
   return (
     <section className="page-mid">
-      <NavTengo actual="inventario" />
       <Suspense fallback={<p className="muted">Cargando tu inventario…</p>}>
         <Lista />
       </Suspense>

@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { NavTengo } from "@/components/nav-tengo";
 import { SELECT_RESERVA, TarjetaReserva, type ReservaFila } from "@/components/tarjeta-reserva";
 import { getSesion } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Reservas" };
+export const metadata: Metadata = { title: "Entregas y reservas" };
 
 export default function Reservas() {
   return (
     <section className="page-mid">
-      <NavTengo actual="reservas" />
-      <h1 className="title-lg">Reservas</h1>
+      <h1 className="title-lg">Entregas y reservas</h1>
       <Suspense fallback={<p className="muted">Cargando reservas…</p>}>
         <Lista />
       </Suspense>

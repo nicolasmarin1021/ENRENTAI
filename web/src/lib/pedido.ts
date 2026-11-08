@@ -17,6 +17,7 @@ export type Pedido = {
   listo: boolean; // ya terminó el pedido guiado
   rider: ItemRider[]; // equipos elegidos (puede haber de varias compañías)
   opciones: Record<string, OpcionesCompania>; // por compañía
+  nota: string; // nota para las compañías (va en cada solicitud)
 };
 
 export type GuardarPedido = (p: Pedido | ((actual: Pedido) => Pedido)) => void;
@@ -29,6 +30,7 @@ export const PEDIDO_VACIO: Pedido = {
   listo: false,
   rider: [],
   opciones: {},
+  nota: "",
 };
 
 // Cambia la cantidad de un equipo en el rider (0 = lo quita).

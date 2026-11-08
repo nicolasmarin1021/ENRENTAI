@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { NavTengo } from "@/components/nav-tengo";
 import { UbicacionBodega } from "@/components/ubicacion-bodega";
 import { getSesion } from "@/lib/sesion";
 import { pesos } from "@/lib/medellin";
@@ -12,7 +11,6 @@ export const metadata: Metadata = { title: "Mi panel" };
 export default function Panel() {
   return (
     <section className="page-mid">
-      <NavTengo actual="panel" />
       <Suspense fallback={<p className="muted">Cargando tu panel…</p>}>
         <Contenido />
       </Suspense>

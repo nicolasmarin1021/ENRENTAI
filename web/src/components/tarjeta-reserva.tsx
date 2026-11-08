@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ESTADOS_RESERVA } from "@/lib/cobro";
 import { fechaCO, pesos } from "@/lib/medellin";
 import { CancelarReserva, ResponderReserva } from "./acciones-reserva";
+import { BotonPDF } from "./boton-pdf";
 
 export type ReservaFila = {
   id: string;
@@ -128,10 +129,50 @@ export function TarjetaReserva({
         </dl>
       )}
 
-      {enlace && ["confirmada", "en_curso", "completada"].includes(r.estado) && (
-        <Link href={`/reservas/${r.id}`} className="btn primary" style={{ justifySelf: "start" }}>
-          Entregas y casos →
-        </Link>
+      {["confirmada", "en_curso", "completada"].includes(r.estado) && (
+        <div className="row-actions">
+          {enlace && (
+            <Link href={vista === "compania" ? `/reservas/${r.id}?de=tengo` : `/reservas/${r.id}`} className="btn primary">
+              Entregas y casos →
+            </Link>
+          )}
+          <BotonPDF
+            texto={vista === "cliente" ? "Comprobante (PDF)" : "Liquidación (PDF)"}
+            datos={{
+              tipo: vista === "cliente" ? "comprobante" : "liquidacion",
+              numero: r.codigo,
+              estado: est.texto,
+              cliente: { nombre: r.cliente_nombre },
+              compania: {
+                nombre: r.companias?.nombre ?? "",
+                zona: r.companias?.zona,
+                direccionBodega: r.companias?.direccion_bodega,
+                horario: r.companias?.horario_bodega,
+              },
+              evento: {
+                lugar: r.lugar_nombre,
+                direccion: r.lugar_direccion,
+                entrega: r.entrega,
+                recogida: r.recogida,
+                dias: r.dias,
+                modalidad: r.modalidad,
+                distanciaKm: r.distancia_km === null ? null : Number(r.distancia_km),
+              },
+              items: r.reserva_items.map((i) => ({ nombre: i.nombre, cantidad: i.cantidad, precioDia: i.precio_dia })),
+              tecnico: r.con_tecnico ? { nombre: "Técnico", valor: r.tecnico } : null,
+              cobro: {
+                alquiler: r.alquiler,
+                transporte: r.transporte,
+                tecnico: r.tecnico,
+                servicio: r.servicio,
+                depositoPct: Number(r.deposito_pct),
+                deposito: r.deposito,
+                total: r.total,
+                comision: r.comision,
+              },
+            }}
+          />
+        </div>
       )}
       {vista === "compania" && r.estado === "pendiente" && <ResponderReserva id={r.id} />}
       {vista === "cliente" && futura && (r.estado === "pendiente" || r.estado === "confirmada") && (
