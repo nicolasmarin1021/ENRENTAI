@@ -7,20 +7,21 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Mis reservas" };
 
-export default function MisReservas() {
+const ACTIVAS = ["pendiente", "confirmada", "en_curso"];
+
+export default function MisReservas({ searchParams }: PageProps<"/necesito/reservas">) {
   return (
-    <section className="page-mid">
-      <Link href="/explorar" className="back-link">← Explorar</Link>
-      <h1 className="title-lg">Mis reservas</h1>
+    <section className="pagina-media">
       <Suspense fallback={<p className="muted">Cargando tus reservas…</p>}>
-        <Lista />
+        <Lista searchParams={searchParams} />
       </Suspense>
     </section>
   );
 }
 
-async function Lista() {
-  const s = await getSesion();
+async function Lista({ searchParams }: Pick<PageProps<"/necesito/reservas">, "searchParams">) {
+  const [sp, s] = await Promise.all([searchParams, getSesion()]);
+  const historial = sp.ver === "historial";
   if (!s) {
     return (
       <div className="card">
@@ -34,32 +35,62 @@ async function Lista() {
     .from("reservas")
     .select(SELECT_RESERVA)
     .eq("cliente", s.id)
-    .order("creado", { ascending: false });
+    .order("entrega", { ascending: true });
+
+  const encabezado = (
+    <div className="page-hd">
+      <div>
+        <h1 className="title-lg">Mis reservas</h1>
+        <p className="muted">
+          Sigue cada solicitud{s.nombre ? ` de ${s.nombre}` : ""}: confirmación de la compañía, entrega, devolución y
+          depósito.
+        </p>
+      </div>
+    </div>
+  );
 
   if (error) {
     return (
-      <p className="form-err">
-        {error.code === "PGRST205" || error.code === "42P01"
-          ? "Las reservas aún no están activadas: falta ejecutar el SQL 0003_reservas.sql en Supabase."
-          : "No pudimos cargar tus reservas. Recarga la página."}
-      </p>
+      <>
+        {encabezado}
+        <p className="form-err">
+          {error.code === "PGRST205" || error.code === "42P01"
+            ? "Las reservas aún no están activadas: falta ejecutar el SQL 0003_reservas.sql en Supabase."
+            : "No pudimos cargar tus reservas. Recarga la página."}
+        </p>
+      </>
     );
   }
-  const reservas = (data ?? []) as unknown as ReservaFila[];
-  if (!reservas.length) {
-    return (
-      <div className="empty">
-        <h2>Aún no tienes reservas</h2>
-        <p className="muted">Arma tu pedido en el mapa, agrega equipos a tu rider y solicita la reserva.</p>
-        <Link href="/explorar" className="btn primary">Ir a Explorar</Link>
-      </div>
-    );
-  }
+  const todas = (data ?? []) as unknown as ReservaFila[];
+  const activas = todas.filter((r) => ACTIVAS.includes(r.estado));
+  const pasadas = todas.filter((r) => !ACTIVAS.includes(r.estado)).reverse();
+  const lista = historial ? pasadas : activas;
+
   return (
-    <div className="eq-list">
-      {reservas.map((r) => (
-        <TarjetaReserva key={r.id} r={r} vista="cliente" />
-      ))}
-    </div>
+    <>
+      {encabezado}
+      <nav className="seg-tabs" aria-label="Ver reservas">
+        <Link href="/necesito/reservas" aria-current={!historial ? "page" : undefined}>
+          Activas · {activas.length}
+        </Link>
+        <Link href="/necesito/reservas?ver=historial" aria-current={historial ? "page" : undefined}>
+          Historial · {pasadas.length}
+        </Link>
+      </nav>
+      {lista.length ? (
+        <div className="bk-list">
+          {lista.map((r) => (
+            <TarjetaReserva key={r.id} r={r} vista="cliente" />
+          ))}
+        </div>
+      ) : (
+        <div className="card empty-rider">
+          <p className="muted">
+            {historial ? "Aquí verás tus reservas cerradas, canceladas o rechazadas." : "No tienes reservas activas."}
+          </p>
+          {!historial && <Link href="/explorar" className="btn primary">Buscar equipos</Link>}
+        </div>
+      )}
+    </>
   );
 }

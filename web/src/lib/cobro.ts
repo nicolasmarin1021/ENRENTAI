@@ -37,11 +37,11 @@ export function calcularCobro(
   };
 }
 
-export const ESTADOS_RESERVA: Record<string, { texto: string; tono: "" | "ok" | "warn" }> = {
-  pendiente: { texto: "Esperando respuesta", tono: "warn" },
-  confirmada: { texto: "Confirmada", tono: "ok" },
+export const ESTADOS_RESERVA: Record<string, { texto: string; tono: "" | "ok" | "warn" | "accent" }> = {
+  pendiente: { texto: "Por confirmar", tono: "warn" },
+  confirmada: { texto: "Confirmada", tono: "accent" },
   rechazada: { texto: "Rechazada", tono: "" },
   cancelada: { texto: "Cancelada", tono: "" },
-  en_curso: { texto: "En curso", tono: "ok" },
+  en_curso: { texto: "Equipo en el show", tono: "ok" },
   completada: { texto: "Completada", tono: "" },
 };

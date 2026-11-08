@@ -26,7 +26,7 @@ export function CancelarReserva({ id }: { id: string }) {
     <div className="row-actions">
       {confirmar ? (
         <>
-          <button type="button" className="btn danger solid sm" onClick={cancelar} disabled={ocupado}>
+          <button type="button" className="btn danger solid" onClick={cancelar} disabled={ocupado}>
             {ocupado ? "Cancelando…" : "Sí, cancelar reserva"}
           </button>
           <button type="button" className="link-btn" onClick={() => setConfirmar(false)} disabled={ocupado}>
@@ -34,7 +34,7 @@ export function CancelarReserva({ id }: { id: string }) {
           </button>
         </>
       ) : (
-        <button type="button" className="btn danger sm" onClick={() => setConfirmar(true)}>
+        <button type="button" className="btn danger" onClick={() => setConfirmar(true)}>
           Cancelar reserva
         </button>
       )}
@@ -94,14 +94,14 @@ export function ResponderReserva({ id }: { id: string }) {
   }
 
   return (
-    <div className="row-actions">
-      <button type="button" className="btn primary" onClick={() => responder(true)} disabled={ocupado}>
-        {ocupado ? "Enviando…" : "Aceptar reserva"}
-      </button>
-      <button type="button" className="btn danger" onClick={() => setRechazando(true)} disabled={ocupado}>
+    <>
+      {error && <span className="form-err" role="alert">{error}</span>}
+      <button type="button" className="btn" onClick={() => setRechazando(true)} disabled={ocupado}>
         Rechazar
       </button>
-      {error && <span className="form-err" role="alert">{error}</span>}
-    </div>
+      <button type="button" className="btn primary" onClick={() => responder(true)} disabled={ocupado}>
+        {ocupado ? "Enviando…" : "Aceptar solicitud"}
+      </button>
+    </>
   );
 }

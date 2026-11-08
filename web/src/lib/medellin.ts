@@ -35,5 +35,17 @@ export const fechaCO = (iso: string) =>
     hourCycle: "h23",
   }).format(new Date(iso));
 
+const diaCO = (iso: string) =>
+  new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", weekday: "short", day: "numeric", month: "short" }).format(
+    new Date(iso),
+  );
+
+// "dom, 15 de nov – lun, 16 de nov" (o un solo día si empieza y termina el mismo día).
+export const rangoCO = (desde: string, hasta: string) => {
+  const a = diaCO(desde);
+  const b = diaCO(hasta);
+  return a === b ? a : `${a} – ${b}`;
+};
+
 export const pesos = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
