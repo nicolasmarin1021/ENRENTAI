@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import Link from "next/link";
+import { Suspense } from "react";
 import { BrandMark } from "@/components/brand";
+import { EtapaPill, SesionHdr } from "@/components/sesion-hdr";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -27,7 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <span className="brand-sub">Renta de audio y RF · Medellín</span>
               </span>
             </Link>
-            <span className="stage-pill">Versión en construcción</span>
+            <Suspense fallback={<EtapaPill />}>
+              <SesionHdr />
+            </Suspense>
           </div>
         </header>
         <main className="wrap site-main">{children}</main>
