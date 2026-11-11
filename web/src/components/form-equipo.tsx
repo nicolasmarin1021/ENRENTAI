@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { CATEGORIAS_RF, ESTADOS, MAX_FOTOS, urlFoto, type Categoria, type EstadoEquipo } from "@/lib/catalogo";
+import { COMISION } from "@/lib/cobro";
 import { pesos } from "@/lib/medellin";
+import { conPuntos, soloNumero } from "@/lib/moneda";
 import { prepararFoto } from "@/lib/fotos";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,12 +39,6 @@ type Props = {
   equipo?: EquipoInicial;
 };
 
-const COMISION_COMPANIA = 0.1;
-const conPuntos = (v: string) => {
-  const n = v.replace(/\D/g, "");
-  return n ? Number(n).toLocaleString("es-CO") : "";
-};
-const entero = (v: string) => Number(v.replace(/\D/g, "") || 0);
 const decimal = (v: string) => (v.trim() === "" ? null : Number(v.replace(",", ".")));
 
 export function FormEquipo({ companiaId, depositoPct, categorias, equipo }: Props) {
@@ -81,7 +77,7 @@ export function FormEquipo({ companiaId, depositoPct, categorias, equipo }: Prop
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setF((p) => ({ ...p, [k]: e.target.value }));
   const esRF = CATEGORIAS_RF.has(f.categoria);
-  const precio = entero(f.precio);
+  const precio = soloNumero(f.precio);
 
   async function alElegirFotos(e: ChangeEvent<HTMLInputElement>) {
     const elegidas = Array.from(e.target.files ?? []);
@@ -283,7 +279,7 @@ export function FormEquipo({ companiaId, depositoPct, categorias, equipo }: Prop
           </div>
           {precio > 0 && (
             <p className="fine span2">
-              Recibes {pesos(Math.round(precio * (1 - COMISION_COMPANIA)))} por unidad cada 24 h, después de la comisión
+              Recibes {pesos(Math.round(precio * (1 - COMISION)))} por unidad cada 24 h, después de la comisión
               de ENRENTA (10 %). El cliente deja un depósito reembolsable del {depositoPct} % del valor de la renta.
             </p>
           )}

@@ -4,12 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ZONAS, pesos } from "@/lib/medellin";
-
-const soloNumero = (v: string) => Number(v.replace(/\D/g, "") || 0);
-const conPuntos = (v: string) => {
-  const n = v.replace(/\D/g, "");
-  return n ? Number(n).toLocaleString("es-CO") : "";
-};
+import { conPuntos, soloNumero } from "@/lib/moneda";
 
 type Props = { uid: string; contacto: string; correo: string };
 

@@ -18,6 +18,8 @@ export type DatosNav = {
     entregasCliente: number; // en curso: el cliente tiene pasos por registrar
     porResponder: number; // solicitudes pendientes de la compañía
     entregasCompania: number; // confirmadas o en curso de la compañía
+    chatsCliente: number; // mensajes sin leer de las compañías
+    chatsCompania: number; // mensajes sin leer de los clientes
   };
 };
 
@@ -63,7 +65,13 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
       caliente: c.entregasCliente > 0,
       activa: (r) => empieza(r, "/necesito/entregas", "/reservas"),
     },
-    { href: "/necesito/chats", texto: "Chats", activa: (r) => empieza(r, "/necesito/chats") },
+    {
+      href: "/necesito/chats",
+      texto: "Chats",
+      cuenta: c.chatsCliente,
+      caliente: c.chatsCliente > 0,
+      activa: (r) => empieza(r, "/necesito/chats"),
+    },
     { href: "/necesito/pagos", texto: "Pagos", activa: (r) => empieza(r, "/necesito/pagos") },
   ];
   const compania: Pestana[] = [
@@ -82,7 +90,13 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
       cuenta: c.entregasCompania,
       activa: (r) => empieza(r, "/tengo/reservas", "/reservas"),
     },
-    { href: "/tengo/mensajes", texto: "Mensajes", activa: (r) => empieza(r, "/tengo/mensajes") },
+    {
+      href: "/tengo/mensajes",
+      texto: "Mensajes",
+      cuenta: c.chatsCompania,
+      caliente: c.chatsCompania > 0,
+      activa: (r) => empieza(r, "/tengo/mensajes"),
+    },
     { href: "/tengo/liquidaciones", texto: "Liquidaciones", activa: (r) => empieza(r, "/tengo/liquidaciones") },
   ];
   const pestanas = modo === "compania" ? compania : modo === "cliente" ? cliente : [];

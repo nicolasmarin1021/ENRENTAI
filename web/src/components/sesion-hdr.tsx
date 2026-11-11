@@ -2,7 +2,14 @@ import { getSesion, iniciales } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { Navegacion, type DatosNav } from "./navegacion";
 
-const SIN_CONTEOS: DatosNav["conteos"] = { misReservas: 0, entregasCliente: 0, porResponder: 0, entregasCompania: 0 };
+const SIN_CONTEOS: DatosNav["conteos"] = {
+  misReservas: 0,
+  entregasCliente: 0,
+  porResponder: 0,
+  entregasCompania: 0,
+  chatsCliente: 0,
+  chatsCompania: 0,
+};
 
 // Parte del encabezado que depende de la sesión (va dentro de un <Suspense>).
 export async function SesionHdr() {
@@ -19,11 +26,18 @@ export async function SesionHdr() {
   const supabase = await createClient();
   const contar = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
   const reservas = () => supabase.from("reservas").select("id", { count: "exact", head: true });
-  const [misReservas, entregasCliente, porResponder, entregasCompania] = await Promise.all([
+  // Mensajes sin leer en Chats (cliente) y Mensajes (compañía); 0 si el chat aún no existe en la base de datos.
+  const sinLeer = async (lado: "cliente" | "compania") => {
+    const { data, error } = await supabase.rpc("chats_sin_leer", { p_lado: lado });
+    return error ? 0 : Number(data ?? 0);
+  };
+  const [misReservas, entregasCliente, porResponder, entregasCompania, chatsCliente, chatsCompania] = await Promise.all([
     contar(reservas().eq("cliente", s.id).in("estado", ["pendiente", "confirmada", "en_curso"])),
     contar(reservas().eq("cliente", s.id).eq("estado", "en_curso")),
     s.compania ? contar(reservas().eq("compania_id", s.compania.id).eq("estado", "pendiente")) : 0,
     s.compania ? contar(reservas().eq("compania_id", s.compania.id).in("estado", ["confirmada", "en_curso"])) : 0,
+    sinLeer("cliente"),
+    s.compania ? sinLeer("compania") : 0,
   ]);
 
   return (
@@ -35,7 +49,7 @@ export async function SesionHdr() {
         iniciales: iniciales(s.nombre || s.correo),
         admin: s.admin,
         compania: s.compania ? { nombre: s.compania.nombre, iniciales: iniciales(s.compania.nombre) } : null,
-        conteos: { misReservas, entregasCliente, porResponder, entregasCompania },
+        conteos: { misReservas, entregasCliente, porResponder, entregasCompania, chatsCliente, chatsCompania },
       }}
     />
   );

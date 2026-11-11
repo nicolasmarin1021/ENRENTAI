@@ -57,6 +57,7 @@ export function TarjetaReserva({
   const futura = new Date(r.entrega) > new Date();
   const activa = ["confirmada", "en_curso", "completada"].includes(r.estado);
   const hrefEntrega = vista === "compania" ? `/reservas/${r.id}?de=tengo` : `/reservas/${r.id}`;
+  const hrefChat = vista === "compania" ? `/tengo/mensajes?reserva=${r.id}` : `/necesito/chats?reserva=${r.id}`;
   const logistica =
     (r.modalidad === "entrega"
       ? `Entrega en ${r.lugar_nombre} ${fechaCO(r.entrega)} · recogida ${fechaCO(r.recogida)}`
@@ -198,6 +199,9 @@ export function TarjetaReserva({
           {vista === "cliente" && futura && (r.estado === "pendiente" || r.estado === "confirmada") && (
             <CancelarReserva id={r.id} />
           )}
+          <Link href={hrefChat} className="btn">
+            {vista === "cliente" ? "Escribir a la compañía" : "Escribir al cliente"}
+          </Link>
           {enlace && activa && (
             <Link
               href={hrefEntrega}
