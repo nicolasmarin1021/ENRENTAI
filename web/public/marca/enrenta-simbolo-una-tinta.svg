@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-29 -18 124 124" width="124" height="124" role="img" aria-label="ENRENTA">
+  <title>ENRENTA</title>
+  <path d="M5.1 26 A26.9 26.9 0 1 1 58.9 26 A26.9 26.9 0 1 1 5.1 26 M5.1 26 V91.5 A4.2 4.2 0 0 0 13.5 91.5 V45 M49.3 46.6 L66.5 95.1" fill="none" stroke="#1E2230" stroke-width="9.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5.1 26 A26.9 26.9 0 1 1 58.9 26 A26.9 26.9 0 1 1 5.1 26 M5.1 26 V91.5 A4.2 4.2 0 0 0 13.5 91.5 V45 M49.3 46.6 L66.5 95.1" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="26" r="22" fill="#1E2230"/>
+  <circle cx="24.5" cy="21.8" r="3.3" fill="#FFFFFF"/>
+  <circle cx="39.5" cy="21.8" r="3.3" fill="#FFFFFF"/>
+  <circle cx="32" cy="35.2" r="3.3" fill="#FFFFFF"/>
+  <rect x="22.5" y="-13" width="19" height="11.5" rx="3" fill="#FFFFFF" stroke="#1E2230" stroke-width="1.4"/>
+  <rect x="27.5" y="-9.5" width="9" height="3" rx="1.2" fill="#1E2230"/>
+</svg>

@@ -19,6 +19,25 @@ npm run dev
 
 Luego abre http://localhost:3000.
 
+## Base de datos (Supabase)
+
+1. En [supabase.com](https://supabase.com) crea un proyecto llamado `ENRENTA` en una región cercana a Colombia (por ejemplo, São Paulo) y guarda la contraseña de la base de datos en un lugar seguro.
+2. Copia `web/.env.example` como `web/.env.local` y pega ahí la **Project URL** y la **publishable key** del proyecto (Project Settings → API Keys). Nunca uses la *secret key* ni la *service_role key* en este archivo.
+3. En el **SQL Editor** de Supabase, pega y ejecuta en orden los archivos de `supabase/migrations/`:
+   `0001_esquema_inicial.sql`, `0002_lugares_medellin.sql` (lugares de show de Medellín), `0003_reservas.sql`,
+   `0004_entregas.sql`, `0005_bloqueos.sql`, `0006_chat.sql` (chat entre clientes y compañías, en tiempo real) y
+   `0007_entregas_completas.sql` (entregas como el prototipo y avisos de cada paso en el chat).
+4. En **Authentication → URL Configuration**, pon `http://localhost:3000` como *Site URL* y agrega `http://localhost:3000/**` en *Redirect URLs*.
+5. Reinicia `npm run dev` para que tome las variables nuevas (en Windows PowerShell usa `npm.cmd run dev`).
+
+La entrada a ENRENTA es sin contraseña: llega un correo con un enlace (y, con plantillas propias, también un código de 6 dígitos).
+
+> **Correos en pruebas:** se usan los correos que trae Supabase, en inglés y solo con enlace. Mandan pocos correos por hora y únicamente a los miembros de tu equipo en Supabase, así que prueba con el correo de tu cuenta de Supabase y abre el enlace en el mismo navegador donde lo pediste.
+>
+> **Antes del lanzamiento:** con el dominio de ENRENTA se conecta un servicio de correo (SMTP propio, por ejemplo Resend) en **Authentication → Emails → SMTP Settings**. Ahí sí se personalizan las plantillas **Confirm sign up** y **Magic link** en español y con el código `{{ .Token }}`.
+
+Mientras no exista `web/.env.local`, la app funciona igual, solo que sin cuentas.
+
 ## Hoja de ruta
 
 1. **Fase 1:** base con el diseño de ENRENTA (hecho), base de datos y cuentas (Supabase), inventario con fotos, pedido guiado, mapa de Medellín, rider y reservas, entregas con fotos, casos, chat, cotizaciones y facturas en PDF. Pagos en modo de prueba.
