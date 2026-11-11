@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Figtree } from "next/font/google";
+import { Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
-import { BrandMark } from "@/components/brand";
+import { Logo } from "@/components/brand";
 import { SesionHdr } from "@/components/sesion-hdr";
 import "./globals.css";
 
-const figtree = Figtree({
-  variable: "--font-figtree",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
@@ -18,16 +18,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={figtree.variable}>
+    <html lang="es" className={spaceGrotesk.variable}>
       <body>
         <header className="hdr">
           <div className="wrap hdr-row">
             <Link href="/" className="brand" aria-label="ENRENTA, ir al inicio">
-              <BrandMark />
-              <span className="brand-txt">
-                <span className="brand-name">ENRENTA</span>
-                <span className="brand-sub">Renta de audio y RF · Medellín</span>
-              </span>
+              <Logo className="brand-logo" />
+              <span className="brand-sub">Renta de audio y RF · Medellín</span>
             </Link>
             {/* Interruptor de modo, cuenta y pestañas: dependen de la sesión y de la página. */}
             <Suspense fallback={null}>

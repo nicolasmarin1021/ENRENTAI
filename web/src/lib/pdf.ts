@@ -36,11 +36,113 @@ export type DatosDoc = {
   };
 };
 
-const ACENTO: [number, number, number] = [91, 120, 240];
-const TINTA: [number, number, number] = [42, 46, 53];
-const SUAVE: [number, number, number] = [107, 113, 120];
-const LINEA: [number, number, number] = [220, 223, 229];
-const FONDO: [number, number, number] = [244, 245, 248];
+// Paleta de la marca: azul señal, tinta y grises azulados.
+const ACENTO: [number, number, number] = [59, 91, 219];
+const TINTA: [number, number, number] = [30, 34, 48];
+const SUAVE: [number, number, number] = [90, 96, 114];
+const LINEA: [number, number, number] = [217, 221, 232];
+const FONDO: [number, number, number] = [243, 245, 251];
+
+// Logo completo en vectores (el mismo dibujo de /public/marca/enrenta-logo.svg).
+// x, y: esquina superior izquierda de las letras; alto: alto de las mayúsculas en mm.
+function dibujarLogo(doc: jsPDF, x: number, y: number, alto: number) {
+  const s = alto / 100;
+  const X = (u: number) => x + u * s;
+  const Y = (v: number) => y + v * s;
+  const R = (u: number) => X(144 + u); // la R empieza en x = 144
+  const poligono = (pts: number[], dx = 0) => {
+    doc.moveTo(X(dx + pts[0]), Y(pts[1]));
+    for (let i = 2; i < pts.length; i += 2) doc.lineTo(X(dx + pts[i]), Y(pts[i + 1]));
+    doc.close();
+  };
+
+  // Letras E N · E N T A
+  doc.setFillColor(...TINTA);
+  const rects = [
+    [0, 0, 13, 100], [0, 0, 54, 13], [0, 43.5, 48, 13], [0, 87, 54, 13],
+    [66, 0, 13, 100], [119, 0, 13, 100],
+    [228, 0, 13, 100], [228, 0, 54, 13], [228, 43.5, 48, 13], [228, 87, 54, 13],
+    [294, 0, 13, 100], [347, 0, 13, 100],
+    [372, 0, 62, 13], [396.5, 0, 13, 100],
+    [452, 62, 34, 13],
+  ];
+  rects.forEach(([a, b, w, h]) => doc.rect(X(a), Y(b), w * s, h * s, "F"));
+  [
+    [66, 0, 81, 0, 132, 100, 117, 100],
+    [294, 0, 309, 0, 360, 100, 345, 100],
+    [432, 100, 446.5, 100, 476.5, 0, 462, 0],
+    [461.5, 0, 476, 0, 506, 100, 491.5, 100],
+  ].forEach((p) => {
+    poligono(p);
+    doc.fill();
+  });
+
+  // La R: un cable (contorno en tinta y relleno azul) que forma el aro, el palo en U y la pata.
+  const cable = () => {
+    doc.circle(R(32), Y(26), 26.9 * s, "S");
+    doc.moveTo(R(5.1), Y(26));
+    doc.lineTo(R(5.1), Y(91.5));
+    doc.curveTo(R(5.1), Y(93.82), R(6.98), Y(95.7), R(9.3), Y(95.7));
+    doc.curveTo(R(11.62), Y(95.7), R(13.5), Y(93.82), R(13.5), Y(91.5));
+    doc.lineTo(R(13.5), Y(45));
+    doc.stroke();
+    doc.moveTo(R(49.3), Y(46.6));
+    doc.lineTo(R(64), Y(88));
+    doc.curveTo(R(70.6), Y(106.67), R(79.27), Y(116), R(90), Y(116));
+    doc.lineTo(R(318), Y(116));
+    doc.stroke();
+  };
+  doc.setLineCap("round");
+  doc.setLineJoin("round");
+  doc.setDrawColor(...TINTA);
+  doc.setLineWidth(9.8 * s);
+  cable();
+  doc.setDrawColor(...ACENTO);
+  doc.setLineWidth(7 * s);
+  cable();
+
+  // Conector XLR hembra con su seguro.
+  doc.setDrawColor(...TINTA);
+  doc.setLineWidth(1.4 * s);
+  doc.setFillColor(74, 77, 87);
+  doc.circle(R(32), Y(26), 22 * s, "FD");
+  doc.setDrawColor(59, 62, 71);
+  doc.setLineWidth(1.2 * s);
+  doc.circle(R(32), Y(26), 18.5 * s, "S");
+  doc.setFillColor(18, 19, 24);
+  [[24.5, 21.8], [39.5, 21.8], [32, 35.2]].forEach(([a, b]) => doc.circle(R(a), Y(b), 3.3 * s, "F"));
+  doc.setDrawColor(...TINTA);
+  doc.setLineWidth(1.4 * s);
+  doc.setFillColor(201, 204, 211);
+  doc.roundedRect(R(22.5), Y(-13), 19 * s, 11.5 * s, 3 * s, 3 * s, "FD");
+  doc.setFillColor(138, 143, 154);
+  doc.roundedRect(R(27.5), Y(-9.5), 9 * s, 3 * s, 1.2 * s, 1.2 * s, "F");
+
+  // Plug XLR macho al final del cable.
+  doc.setLineWidth(1.2 * s);
+  doc.setFillColor(42, 44, 51);
+  poligono([312, 111.1, 326, 109.5, 326, 122.5, 312, 120.9], 144);
+  doc.fillStroke();
+  doc.roundedRect(R(326), Y(107.5), 28 * s, 17 * s, 3.5 * s, 3.5 * s, "FD");
+  doc.setDrawColor(138, 143, 154);
+  doc.moveTo(R(332), Y(112));
+  doc.lineTo(R(335), Y(116));
+  doc.lineTo(R(338), Y(112));
+  doc.stroke();
+  doc.setDrawColor(...TINTA);
+  doc.setFillColor(201, 204, 211);
+  doc.roundedRect(R(354), Y(109), 12 * s, 14 * s, 2 * s, 2 * s, "FD");
+  doc.setFillColor(107, 111, 122);
+  doc.roundedRect(R(358), Y(114.5), 5.5 * s, 3 * s, 1 * s, 1 * s, "F");
+  doc.setLineWidth(1 * s);
+  doc.setFillColor(158, 163, 173);
+  doc.roundedRect(R(366), Y(111.5), 3 * s, 9 * s, 1 * s, 1 * s, "FD");
+
+  // Volver a los valores por defecto para el resto del documento.
+  doc.setLineCap("butt");
+  doc.setLineJoin("miter");
+  doc.setLineWidth(0.2);
+}
 
 // Las fuentes estándar del PDF no traen espacios especiales: se normalizan.
 const limpio = (s: string) => s.replace(/[   ]/g, " ").replace(/→/g, "a");
@@ -95,7 +197,7 @@ export function generarPDF(d: DatosDoc): jsPDF {
   doc.setFillColor(...ACENTO);
   doc.rect(0, 0, W, 4, "F");
   y = 18;
-  texto("ENRENTA", M, y, { size: 20, bold: true });
+  dibujarLogo(doc, M, 11, 6.4);
   texto("Renta de audio y RF · Medellín", M, y + 6, { size: 9, color: SUAVE });
   texto(TITULOS[d.tipo], W - M, y - 2, { size: 12, bold: true, color: ACENTO, align: "right" });
   texto(`N.º ${d.numero}`, W - M, y + 4, { size: 10, bold: true, align: "right" });

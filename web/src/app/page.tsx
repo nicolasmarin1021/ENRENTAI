@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BrandMark } from "@/components/brand";
+import { Simbolo } from "@/components/brand";
 import styles from "./page.module.css";
 
 // Lo que protege a quien renta; se muestra desde la primera pantalla.
@@ -22,7 +22,7 @@ export default function Inicio() {
   return (
     <section className={styles.landing} aria-label="Inicio">
       <div className={styles.card}>
-        <BrandMark size="lg" />
+        <Simbolo size={72} className={styles.simbolo} />
         <h1 className="title-xl">
           ¿Qué te trae a <em>ENRENTA</em>?
         </h1>

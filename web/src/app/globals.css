@@ -1,21 +1,23 @@
 /*
-  ENRENTA — base visual.
-  Tono: claro, amable y confiable (inspirado en el prototipo "suave").
-  Una sola familia (Figtree), paneles blancos sin bordes, sombras casi invisibles,
-  controles en píldora y un solo acento lavanda para lo que se puede tocar.
+  ENRENTA — base visual (marca «Conector»).
+  Tono: claro, técnico y confiable. Una sola familia (Space Grotesk), paneles blancos
+  sin bordes, sombras casi invisibles, controles en píldora y un solo acento,
+  el azul señal del cable del logo, para lo que se puede tocar.
+  Paleta: azul señal #3B5BDB, lavanda #E8ECFD, tinta #1E2230 y coral #FF7A59 de apoyo.
 */
 :root {
-  --bg: #F7F7F9;
+  --bg: #F7F8FC;
   --surface: #FFFFFF;
-  --surface-2: #F4F5F8;
-  --ink: #2A2E35;
-  --muted: #6B7178;
-  --line: #EDEFF3;
-  --line-strong: #DCDFE5;
-  --accent: #5B78F0;
-  --accent-2: #8EA2F8;
+  --surface-2: #F3F5FB;
+  --ink: #1E2230;
+  --muted: #5A6072;
+  --line: #E9ECF4;
+  --line-strong: #D9DDE8;
+  --accent: #3B5BDB;
+  --accent-2: #6F86E8;
   --accent-ink: #FFFFFF;
-  --accent-soft: #EEF1FE;
+  --accent-soft: #E8ECFD;
+  --coral: #FF7A59;
   --ok: #2E9B6A;
   --ok-soft: #E7F6EE;
   --warn: #A8670A;
@@ -32,7 +34,7 @@
   --soft: 0 0 0 1px rgba(16, 24, 40, .06), 0 4px 13px -5px rgba(0, 0, 0, .10);
   --r: 20px;
   --r-sm: 14px;
-  --font: var(--font-figtree), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font: var(--font-space-grotesk), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color-scheme: light;
 }
 
@@ -126,17 +128,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tabs a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
 .count { padding: 3px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font: 600 11px/1 var(--font); }
 .count.hot { background: var(--accent); color: var(--accent-ink); }
-.brand-mark {
-  width: 34px; height: 34px; border-radius: 12px; flex: none;
-  display: grid; place-items: center;
-  color: var(--accent-ink);
-  background: linear-gradient(135deg, var(--accent-2), var(--accent));
-  box-shadow: 0 8px 16px -8px rgba(91, 120, 240, .7);
-}
-.brand-mark.lg { width: 56px; height: 56px; border-radius: 18px; }
-.brand-txt { display: flex; flex-direction: column; gap: 2px; }
-.brand-name { font-weight: 700; font-size: 20px; line-height: 1; letter-spacing: .04em; }
-.brand-sub { font-size: 12.5px; color: var(--muted); }
+/* logo: letras y conector en tinta, cable en el acento (ver components/brand.tsx) */
+.logo { display: block; flex: none; color: var(--ink); }
+.logo .l-letras, .logo .l-cara { fill: currentColor; }
+.logo .l-cable, .simbolo .l-cable { fill: none; stroke: var(--accent); }
+.logo .l-hueco { fill: var(--surface); }
+.logo .l-funda { fill: #9EA3AD; }
+.brand-logo { height: 40px; width: auto; }
+.brand-sub { padding-left: 12px; border-left: 1px solid var(--line-strong); font-size: 12.5px; line-height: 1.3; color: var(--muted); max-width: 130px; }
 
 .site-main { flex: 1; padding-block: 28px 40px; }
 /* Sin barra horizontal aunque algo se salga unos píxeles (el mapa usa 100vw). */
@@ -191,9 +190,9 @@ body { overflow-x: clip; }
 .btn.primary {
   color: var(--accent-ink);
   background: linear-gradient(180deg, var(--accent-2), var(--accent));
-  box-shadow: 0 10px 22px -10px rgba(91, 120, 240, .8), inset 0 1px 0 rgba(255, 255, 255, .25);
+  box-shadow: 0 10px 22px -10px rgba(59, 91, 219, .8), inset 0 1px 0 rgba(255, 255, 255, .25);
 }
-.btn.primary:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 12px 24px -10px rgba(91, 120, 240, .9); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 12px 24px -10px rgba(59, 91, 219, .9); }
 .btn.lg { min-height: 50px; padding: 12px 22px; font-size: 16px; }
 .btn.sm { min-height: 34px; padding: 6px 14px; font-size: 14px; }
 .btn.block { width: 100%; }
@@ -319,7 +318,7 @@ body { overflow-x: clip; }
   aspect-ratio: 1; border-radius: 14px; cursor: pointer;
   display: grid; place-items: center; align-content: center; gap: 4px; text-align: center; padding: 8px;
   background: var(--accent-soft); color: var(--accent); font-size: 13.5px; font-weight: 500;
-  box-shadow: inset 0 0 0 1.5px rgba(91, 120, 240, .35);
+  box-shadow: inset 0 0 0 1.5px rgba(59, 91, 219, .35);
 }
 .foto-add:hover { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .foto-add:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -346,7 +345,7 @@ body { overflow-x: clip; }
 }
 .mk.medio { background: var(--pin-mid); color: var(--on-mid); }
 .mk.nada { background: var(--bad); }
-.mk:hover { box-shadow: 0 0 0 3px rgba(42, 46, 53, .25), 0 8px 18px -4px rgba(16, 24, 40, .5); }
+.mk:hover { box-shadow: 0 0 0 3px rgba(30, 34, 48, .25), 0 8px 18px -4px rgba(16, 24, 40, .5); }
 .mk.activo { box-shadow: 0 0 0 3px var(--ink), 0 8px 18px -4px rgba(16, 24, 40, .5); }
 .mk-lugar { display: grid; justify-items: center; gap: 5px; margin-top: -10px; padding: 0; border: 0; background: none; cursor: default; }
 .mk-lugar .rombo {
@@ -368,7 +367,7 @@ body { overflow-x: clip; }
 .mk-pin-caja { width: 26px; height: 34px; cursor: grab; display: grid; justify-items: center; }
 .mk-pin {
   width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
-  background: var(--accent); box-shadow: 0 6px 14px -4px rgba(91, 120, 240, .8), inset 0 0 0 6px rgba(255, 255, 255, .9);
+  background: var(--accent); box-shadow: 0 6px 14px -4px rgba(59, 91, 219, .8), inset 0 0 0 6px rgba(255, 255, 255, .9);
 }
 
 /* explorar: pedido guiado */
@@ -394,7 +393,7 @@ body { overflow-x: clip; }
   background: var(--surface); color: var(--ink); box-shadow: var(--soft); font-size: 14px; font-weight: 500;
 }
 .chip:hover { box-shadow: 0 0 0 1px rgba(16, 24, 40, .12), 0 6px 16px -6px rgba(0, 0, 0, .16); }
-.chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px rgba(91, 120, 240, .5); }
+.chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px rgba(59, 91, 219, .5); }
 .chip-sub { font-size: 12px; font-weight: 400; color: var(--muted); }
 .nd { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
 .nd.alto { background: var(--ok); }
@@ -466,7 +465,7 @@ body:has(.stage:not([style*="none"])) .site-foot { display: none; }
   background: var(--surface-2); color: var(--ink); text-align: left; cursor: pointer;
 }
 .pcard:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
-.pcard[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px rgba(91, 120, 240, .5); }
+.pcard[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px rgba(59, 91, 219, .5); }
 .pcard b { display: block; font-weight: 600; font-size: 13.5px; white-space: nowrap; }
 .pcard .fine { display: block; font-size: 12px; white-space: nowrap; }
 .pc-dot {
@@ -479,7 +478,7 @@ body:has(.stage:not([style*="none"])) .site-foot { display: none; }
   right: var(--borde); bottom: 150px; display: flex; align-items: center; gap: 8px;
   padding: 10px 16px; border-radius: 999px; text-decoration: none; color: var(--accent); font-weight: 600; font-size: 14.5px;
 }
-.rider-pill:hover { box-shadow: 0 0 0 1.5px rgba(91, 120, 240, .5), var(--shadow); }
+.rider-pill:hover { box-shadow: 0 0 0 1.5px rgba(59, 91, 219, .5), var(--shadow); }
 .pop {
   top: 150px; right: calc(var(--borde) + 50px); bottom: 150px; z-index: 4; width: min(430px, calc(100% - 32px));
   display: flex; flex-direction: column; overflow: hidden;
@@ -672,7 +671,7 @@ a.foto { display: block; }
   .lg-only, .brand-sub { display: none; }
   .hdr-row { column-gap: 6px; padding-block: 10px 4px; }
   .brand { gap: 8px; }
-  .brand-name { font-size: 17px; }
+  .brand-logo { height: 32px; }
   .role a { padding: 7px 9px; }
   .acct-btn { padding: 3px; }
   .acct-btn.out { padding: 6px 11px; }
@@ -763,7 +762,7 @@ a.foto { display: block; }
   padding: 8px 16px; border-radius: 999px; text-decoration: none; font-size: 14px; font-weight: 500;
   background: var(--surface); color: var(--ink); box-shadow: var(--soft);
 }
-.seg-tabs a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px rgba(91, 120, 240, .5); }
+.seg-tabs a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px rgba(59, 91, 219, .5); }
 
 /* stock por día */
 .btn.icono { width: 38px; min-height: 38px; padding: 0; font-size: 20px; }

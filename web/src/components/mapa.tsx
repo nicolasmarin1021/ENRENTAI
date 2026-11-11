@@ -111,7 +111,7 @@ export function Mapa({
             id: "anillos",
             type: "line",
             source: "anillos",
-            paint: { "line-color": "#5B78F0", "line-width": 1.4, "line-opacity": 0.55, "line-dasharray": [2, 2.5] },
+            paint: { "line-color": "#3B5BDB", "line-width": 1.4, "line-opacity": 0.55, "line-dasharray": [2, 2.5] },
           });
           m.addSource("ruta", { type: "geojson", data: VACIO });
           m.addLayer({
@@ -119,7 +119,7 @@ export function Mapa({
             type: "line",
             source: "ruta",
             layout: { "line-cap": "round" },
-            paint: { "line-color": "#5B78F0", "line-width": 3, "line-dasharray": [1.2, 1.6] },
+            paint: { "line-color": "#3B5BDB", "line-width": 3, "line-dasharray": [1.2, 1.6] },
           });
           setListo(true);
         });

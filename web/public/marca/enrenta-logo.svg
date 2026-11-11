@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -16 518 144" width="518" height="144" role="img" aria-label="ENRENTA">
+  <title>ENRENTA</title>
+  <g fill="#1E2230">
+    <rect x="0" y="0" width="13" height="100"/>
+    <rect x="0" y="0" width="54" height="13"/>
+    <rect x="0" y="43.5" width="48" height="13"/>
+    <rect x="0" y="87" width="54" height="13"/>
+    <rect x="66" y="0" width="13" height="100"/>
+    <rect x="119" y="0" width="13" height="100"/>
+    <polygon points="66,0 81,0 132,100 117,100"/>
+    <rect x="228" y="0" width="13" height="100"/>
+    <rect x="228" y="0" width="54" height="13"/>
+    <rect x="228" y="43.5" width="48" height="13"/>
+    <rect x="228" y="87" width="54" height="13"/>
+    <rect x="294" y="0" width="13" height="100"/>
+    <rect x="347" y="0" width="13" height="100"/>
+    <polygon points="294,0 309,0 360,100 345,100"/>
+    <rect x="372" y="0" width="62" height="13"/>
+    <rect x="396.5" y="0" width="13" height="100"/>
+    <polygon points="432,100 446.5,100 476.5,0 462,0"/>
+    <polygon points="461.5,0 476,0 506,100 491.5,100"/>
+    <rect x="452" y="62" width="34" height="13"/>
+  </g>
+  <g transform="translate(144 0)">
+    <path d="M5.1 26 A26.9 26.9 0 1 1 58.9 26 A26.9 26.9 0 1 1 5.1 26 M5.1 26 V91.5 A4.2 4.2 0 0 0 13.5 91.5 V45 M49.3 46.6 L64 88 Q73.9 116 90 116 H318" fill="none" stroke="#1E2230" stroke-width="9.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M5.1 26 A26.9 26.9 0 1 1 58.9 26 A26.9 26.9 0 1 1 5.1 26 M5.1 26 V91.5 A4.2 4.2 0 0 0 13.5 91.5 V45 M49.3 46.6 L64 88 Q73.9 116 90 116 H318" fill="none" stroke="#3B5BDB" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="32" cy="26" r="22" fill="#4A4D57" stroke="#1E2230" stroke-width="1.4"/>
+    <circle cx="32" cy="26" r="18.5" fill="none" stroke="#3B3E47" stroke-width="1.2"/>
+    <circle cx="24.5" cy="21.8" r="3.3" fill="#121318"/>
+    <circle cx="39.5" cy="21.8" r="3.3" fill="#121318"/>
+    <circle cx="32" cy="35.2" r="3.3" fill="#121318"/>
+    <rect x="22.5" y="-13" width="19" height="11.5" rx="3" fill="#C9CCD3" stroke="#1E2230" stroke-width="1.4"/>
+    <rect x="27.5" y="-9.5" width="9" height="3" rx="1.2" fill="#8A8F9A"/>
+    <polygon points="312,111.1 326,109.5 326,122.5 312,120.9" fill="#2A2C33" stroke="#1E2230" stroke-width="1.2" stroke-linejoin="round"/>
+    <rect x="326" y="107.5" width="28" height="17" rx="3.5" fill="#2A2C33" stroke="#1E2230" stroke-width="1.2"/>
+    <path d="M332 112 L335 116 L338 112" fill="none" stroke="#8A8F9A" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="354" y="109" width="12" height="14" rx="2" fill="#C9CCD3" stroke="#1E2230" stroke-width="1.2"/>
+    <rect x="358" y="114.5" width="5.5" height="3" rx="1" fill="#6B6F7A"/>
+    <rect x="366" y="111.5" width="3" height="9" rx="1" fill="#9EA3AD" stroke="#1E2230" stroke-width="1"/>
+  </g>
+</svg>
