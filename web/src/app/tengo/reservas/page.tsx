@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { SELECT_RESERVA, TarjetaReserva, type ReservaFila } from "@/components/tarjeta-reserva";
+import { TarjetaFlujo, TiraPasos } from "@/components/entregas/tarjeta-flujo";
+import { cargarFlujos } from "@/lib/entregas-servidor";
 import { getSesion } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,10 +14,14 @@ export default function Entregas() {
       <div className="page-hd">
         <div>
           <h1 className="title-lg">Entregas y devoluciones</h1>
-          <p className="muted">Registra con fotos la salida de bodega y la revisión final de cada reserva.</p>
+          <p className="muted">
+            El mismo proceso para cada reserva: fotos y lista de chequeo al salir de bodega, al recibir, al devolver y en
+            la revisión final. Si algo no cuadra, abre un caso y ENRENTA ayuda a resolverlo.
+          </p>
         </div>
       </div>
-      <Suspense fallback={<p className="muted">Cargando reservas…</p>}>
+      <TiraPasos />
+      <Suspense fallback={<p className="muted">Cargando tus entregas…</p>}>
         <Lista />
       </Suspense>
     </section>
@@ -34,29 +39,20 @@ async function Lista() {
     );
   }
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("reservas")
-    .select(SELECT_RESERVA)
-    .eq("compania_id", s.compania.id)
-    .order("entrega", { ascending: true });
-
-  if (error) {
-    return (
-      <p className="form-err">
-        {error.code === "PGRST205" || error.code === "42P01"
-          ? "Las reservas aún no están activadas: falta ejecutar el SQL 0003_reservas.sql en Supabase."
-          : "No pudimos cargar las reservas. Recarga la página."}
-      </p>
-    );
-  }
-  const todas = (data ?? []) as unknown as ReservaFila[];
-  const pendientes = todas.filter((r) => r.estado === "pendiente").length;
-  const activas = todas.filter((r) => r.estado === "confirmada" || r.estado === "en_curso");
-  const historial = todas.filter((r) => ["completada", "cancelada", "rechazada"].includes(r.estado)).reverse();
+  const [datos, { count: pendientes }] = await Promise.all([
+    cargarFlujos("compania", { compania: s.compania.id }),
+    supabase
+      .from("reservas")
+      .select("id", { count: "exact", head: true })
+      .eq("compania_id", s.compania.id)
+      .eq("estado", "pendiente"),
+  ]);
+  if (!datos.ok) return <p className="form-err">{datos.mensaje}</p>;
+  const { ahora } = datos;
 
   return (
     <>
-      {pendientes > 0 && (
+      {(pendientes ?? 0) > 0 && (
         <p className="note">
           Tienes {pendientes} {pendientes === 1 ? "solicitud" : "solicitudes"} por responder.{" "}
           <Link href="/tengo/panel">Respóndelas en tu panel</Link>
@@ -65,21 +61,21 @@ async function Lista() {
       <section className="bk-list" aria-label="Por salir y en curso">
         <div className="sec-hd">
           <h2>Por salir y en curso</h2>
-          <span className="fine">Salida con fotos, devolución y revisión final</span>
+          <span className="fine">Salida con fotos, recepción, devolución y revisión final</span>
         </div>
-        {activas.length ? (
-          activas.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" />)
+        {datos.activos.length ? (
+          datos.activos.map((f) => <TarjetaFlujo key={f.id} f={f} lado="compania" ahora={ahora} />)
         ) : (
-          <p className="vacio">No tienes entregas pendientes.</p>
+          <p className="vacio">No tienes entregas pendientes. Las reservas aparecen aquí cuando las confirmas.</p>
         )}
       </section>
-      {historial.length > 0 && (
-        <section className="bk-list" aria-label="Historial">
+      {datos.cerrados.length > 0 && (
+        <section className="bk-list" aria-label="Cerradas">
           <div className="sec-hd">
-            <h2>Historial</h2>
+            <h2>Cerradas</h2>
           </div>
-          {historial.map((r) => (
-            <TarjetaReserva key={r.id} r={r} vista="compania" />
+          {datos.cerrados.map((f) => (
+            <TarjetaFlujo key={f.id} f={f} lado="compania" ahora={ahora} />
           ))}
         </section>
       )}

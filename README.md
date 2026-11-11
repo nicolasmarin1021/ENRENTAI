@@ -25,7 +25,8 @@ Luego abre http://localhost:3000.
 2. Copia `web/.env.example` como `web/.env.local` y pega ahí la **Project URL** y la **publishable key** del proyecto (Project Settings → API Keys). Nunca uses la *secret key* ni la *service_role key* en este archivo.
 3. En el **SQL Editor** de Supabase, pega y ejecuta en orden los archivos de `supabase/migrations/`:
    `0001_esquema_inicial.sql`, `0002_lugares_medellin.sql` (lugares de show de Medellín), `0003_reservas.sql`,
-   `0004_entregas.sql`, `0005_bloqueos.sql` y `0006_chat.sql` (chat entre clientes y compañías, en tiempo real).
+   `0004_entregas.sql`, `0005_bloqueos.sql`, `0006_chat.sql` (chat entre clientes y compañías, en tiempo real) y
+   `0007_entregas_completas.sql` (entregas como el prototipo y avisos de cada paso en el chat).
 4. En **Authentication → URL Configuration**, pon `http://localhost:3000` como *Site URL* y agrega `http://localhost:3000/**` en *Redirect URLs*.
 5. Reinicia `npm run dev` para que tome las variables nuevas (en Windows PowerShell usa `npm.cmd run dev`).
 

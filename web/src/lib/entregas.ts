@@ -61,3 +61,52 @@ export const TIPOS_CASO: Record<string, string> = {
 
 export const MIN_FOTOS_PASO = 2;
 export const MAX_FOTOS_PASO = 12;
+
+// ---- Lo que muestra la tarjeta de entrega (fotos ya con enlace firmado) ----
+export type ActaVista = {
+  paso: Paso;
+  autor_nombre: string;
+  creado: string;
+  checks: string[];
+  nota: string | null;
+  fotos: string[];
+};
+
+export type CasoVista = {
+  id: string;
+  codigo: string;
+  tipo: string;
+  descripcion: string;
+  estado: "abierto" | "resuelto";
+  creado: string;
+  resuelto: string | null;
+  resuelto_por_nombre: string | null;
+  abierto_por_nombre: string;
+  fotos: string[];
+  mensajes: { autor_nombre: string; texto: string; creado: string }[];
+};
+
+export type Flujo = {
+  id: string;
+  codigo: string;
+  estado: string;
+  entrega: string;
+  recogida: string;
+  contraparte: string; // con quién: la compañía (para el cliente) o el cliente (para la compañía)
+  lugar: string; // "Entrega en …" o "Retiro en bodega …"
+  deposito: number;
+  items: { nombre: string; cantidad: number }[];
+  actas: ActaVista[];
+  casos: CasoVista[];
+};
+
+// ¿Ese paso se puede registrar ahora? (las mismas reglas de registrar_acta en la base de datos)
+export function pasoDisponible(f: Flujo, paso: Paso, ahora: number) {
+  const hecho = (p: Paso) => f.actas.some((a) => a.paso === p);
+  if (hecho(paso)) return false;
+  if (paso === "salida") return f.estado === "confirmada";
+  if (f.estado !== "en_curso" || !hecho("salida")) return false;
+  if (paso === "devolucion") return hecho("recepcion");
+  if (paso === "revision") return hecho("devolucion") || ahora >= Date.parse(f.recogida);
+  return true;
+}
