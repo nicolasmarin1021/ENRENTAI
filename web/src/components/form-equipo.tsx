@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { CATEGORIAS_RF, ESTADOS, MAX_FOTOS, urlFoto, type Categoria, type EstadoEquipo } from "@/lib/catalogo";
-import { COMISION } from "@/lib/cobro";
 import { pesos } from "@/lib/medellin";
 import { conPuntos, soloNumero } from "@/lib/moneda";
 import { prepararFoto } from "@/lib/fotos";
@@ -41,7 +40,8 @@ type Props = {
 
 const decimal = (v: string) => (v.trim() === "" ? null : Number(v.replace(",", ".")));
 
-export function FormEquipo({ companiaId, depositoPct, categorias, equipo }: Props) {
+// depositoPct se sigue recibiendo para el modelo completo; la BETA no muestra depósito.
+export function FormEquipo({ companiaId, categorias, equipo }: Props) {
   const router = useRouter();
   const [supabase] = useState(createClient);
   const [f, setF] = useState({
@@ -279,8 +279,8 @@ export function FormEquipo({ companiaId, depositoPct, categorias, equipo }: Prop
           </div>
           {precio > 0 && (
             <p className="fine span2">
-              Recibes {pesos(Math.round(precio * (1 - COMISION)))} por unidad cada 24 h, después de la comisión
-              de ENRENTA (10 %). El cliente deja un depósito reembolsable del {depositoPct} % del valor de la renta.
+              Es el precio de referencia que verán los clientes: {pesos(precio)} por unidad cada 24 h. Durante la BETA,
+              ENRENTA no cobra comisión; el precio final lo acuerdas directamente con el cliente.
             </p>
           )}
         </div>

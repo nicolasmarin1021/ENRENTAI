@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Simbolo } from "@/components/brand";
 import styles from "./page.module.css";
 
-// Lo que protege a quien renta; se muestra desde la primera pantalla.
+// Lo que ofrece la BETA; se muestra desde la primera pantalla.
 const TRUST = [
   "Compañías verificadas",
-  "Pago en garantía hasta la devolución",
-  "Depósito reembolsable",
-  "Soporte por chat",
+  "Disponibilidad real por fechas",
+  "Cotiza por WhatsApp en un clic",
+  "Gratis durante la BETA",
 ];
 
 function Icon({ d }: { d: string }) {
@@ -45,13 +45,13 @@ export default function Inicio() {
             </span>
             <span className={styles.choiceTxt}>
               <b>Tengo equipos</b>
-              <span>Publica tu inventario y recibe reservas</span>
+              <span>Publica tu inventario y recibe cotizaciones por WhatsApp</span>
             </span>
             <span className={styles.go} aria-hidden="true">→</span>
           </Link>
         </div>
 
-        <ul className={styles.trust} aria-label="Cómo te protege ENRENTA">
+        <ul className={styles.trust} aria-label="Qué ofrece ENRENTA">
           {TRUST.map((t) => (
             <li key={t}>
               <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

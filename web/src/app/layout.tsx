@@ -24,6 +24,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div className="wrap hdr-row">
             <Link href="/" className="brand" aria-label="ENRENTA, ir al inicio">
               <Logo className="brand-logo" />
+              <span className="beta" title="Versión de prueba: ENRENTA conecta, el pago se acuerda por WhatsApp">
+                BETA
+              </span>
               <span className="brand-sub">Renta de audio y RF · Medellín</span>
             </Link>
             {/* Interruptor de modo, cuenta y pestañas: dependen de la sesión y de la página. */}
@@ -33,7 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main className="wrap site-main">{children}</main>
-        <footer className="wrap site-foot">ENRENTA · Medellín, Colombia</footer>
+        <footer className="wrap site-foot">
+          ENRENTA BETA · Medellín, Colombia · <Link href="/como-funciona">Cómo funciona y condiciones de la BETA</Link>
+        </footer>
       </body>
     </html>
   );

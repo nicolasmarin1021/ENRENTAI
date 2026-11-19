@@ -37,10 +37,11 @@ export function calcularCobro(
   };
 }
 
+// Nombres de los estados en la BETA: la compañía marca cada solicitud como rentada o no concretada.
 export const ESTADOS_RESERVA: Record<string, { texto: string; tono: "" | "ok" | "warn" | "accent" }> = {
   pendiente: { texto: "Por confirmar", tono: "warn" },
-  confirmada: { texto: "Confirmada", tono: "accent" },
-  rechazada: { texto: "Rechazada", tono: "" },
+  confirmada: { texto: "Rentada", tono: "accent" },
+  rechazada: { texto: "No se concretó", tono: "" },
   cancelada: { texto: "Cancelada", tono: "" },
   en_curso: { texto: "Equipo en el show", tono: "ok" },
   completada: { texto: "Completada", tono: "" },

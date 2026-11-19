@@ -2,6 +2,14 @@
 
 Marketplace para rentar equipos de audio y RF para shows, entre clientes ("Necesito equipos") y compañías ("Tengo equipos"). Lanzamiento inicial en **Medellín**.
 
+## Versiones
+
+- **Rama `beta` — ENRENTA BETA (la que se desarrolla ahora).** Modelo de conexión: ENRENTA muestra el inventario,
+  arma la cotización y conecta al cliente con la compañía por WhatsApp. El precio final y el pago se acuerdan entre
+  ellos; ENRENTA no cobra ni recibe pagos ni muestra depósito. Sin chat interno ni entregas con fotos. Con reseñas.
+- **Rama `modelo-full` (etiqueta `modelo-full-v1`) — modelo completo, para retomar en el futuro.** Reservas con cobro
+  (servicio 7 %, depósito en garantía, comisión 10 %), entregas con fotos y casos, chat en tiempo real y liquidaciones.
+
 ## Estructura
 
 - `prototipo/` — el prototipo navegable (HTML) que define el diseño y los flujos. Es la referencia de cómo debe verse y comportarse la app.
@@ -25,8 +33,10 @@ Luego abre http://localhost:3000.
 2. Copia `web/.env.example` como `web/.env.local` y pega ahí la **Project URL** y la **publishable key** del proyecto (Project Settings → API Keys). Nunca uses la *secret key* ni la *service_role key* en este archivo.
 3. En el **SQL Editor** de Supabase, pega y ejecuta en orden los archivos de `supabase/migrations/`:
    `0001_esquema_inicial.sql`, `0002_lugares_medellin.sql` (lugares de show de Medellín), `0003_reservas.sql`,
-   `0004_entregas.sql`, `0005_bloqueos.sql`, `0006_chat.sql` (chat entre clientes y compañías, en tiempo real) y
-   `0007_entregas_completas.sql` (entregas como el prototipo y avisos de cada paso en el chat).
+   `0004_entregas.sql`, `0005_bloqueos.sql`, `0006_chat.sql` (chat entre clientes y compañías, en tiempo real),
+   `0007_entregas_completas.sql` (entregas como el prototipo y avisos de cada paso en el chat) y, solo para la BETA,
+   `0008_beta_conexion.sql` (WhatsApp de las compañías, cotizaciones sin cobro y "Rentada / No se concretó") y
+   `0009_beta_resenas.sql` (reseñas de los clientes y respuesta de las compañías).
 4. En **Authentication → URL Configuration**, pon `http://localhost:3000` como *Site URL* y agrega `http://localhost:3000/**` en *Redirect URLs*.
 5. Reinicia `npm run dev` para que tome las variables nuevas (en Windows PowerShell usa `npm.cmd run dev`).
 

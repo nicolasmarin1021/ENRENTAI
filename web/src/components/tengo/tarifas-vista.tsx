@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { COMISION, SERVICIO } from "@/lib/cobro";
 import { costoTransporte, type Transporte } from "@/lib/geo";
 import { pesos } from "@/lib/medellin";
 import { conPuntos, soloNumero } from "@/lib/moneda";
 import { createClient } from "@/lib/supabase/client";
+import { normalizarWhatsApp, whatsappValido } from "@/lib/whatsapp";
+
+// "573001234567" → "300 123 4567" para mostrarlo en el campo.
+const whatsappLocal = (n: string) => {
+  const m = n.match(/^57(\d{3})(\d{3})(\d{4})$/);
+  return m ? `${m[1]} ${m[2]} ${m[3]}` : n;
+};
 
 // Tarifas de la compañía tal como están en la base de datos.
 export type Tarifas = Transporte & {
@@ -33,9 +39,11 @@ type Form = {
   horario: string;
   tecnico: string;
   tarifaTecnico: string;
+  whatsapp: string;
 };
 
-const desde = (t: Tarifas): Form => ({
+const desde = (t: Tarifas, whatsapp: string): Form => ({
+  whatsapp: whatsappLocal(whatsapp),
   deposito: String(Number(t.deposito_pct)),
   cobertura: String(t.cobertura_km),
   modo: t.transporte_modo,
@@ -64,6 +72,8 @@ const aGuardar = (f: Form) => ({
 });
 
 function validar(f: Form) {
+  if (!whatsappValido(normalizarWhatsApp(f.whatsapp)))
+    return "Escribe el WhatsApp para cotizaciones (un celular de 10 dígitos, p. ej. 300 123 4567).";
   const dep = Number(f.deposito);
   if (f.deposito.trim() === "" || !Number.isFinite(dep) || dep < 0 || dep > 100)
     return "El depósito debe ser un porcentaje entre 0 y 100.";
@@ -78,9 +88,9 @@ function validar(f: Form) {
   return "";
 }
 
-export function TarifasVista({ inicial }: { inicial: Tarifas }) {
+export function TarifasVista({ inicial, whatsapp }: { inicial: Tarifas; whatsapp: string }) {
   const router = useRouter();
-  const [f, setF] = useState<Form>(() => desde(inicial));
+  const [f, setF] = useState<Form>(() => desde(inicial, whatsapp));
   const [error, setError] = useState("");
   const [guardado, setGuardado] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -97,7 +107,9 @@ export function TarifasVista({ inicial }: { inicial: Tarifas }) {
     cambiar({ [k]: conPuntos(e.target.value) } as Partial<Form>);
 
   const valores = aGuardar(f);
-  const hayCambios = JSON.stringify(valores) !== JSON.stringify(aGuardar(desde(inicial)));
+  const numero = normalizarWhatsApp(f.whatsapp);
+  const hayCambios =
+    JSON.stringify(valores) !== JSON.stringify(aGuardar(desde(inicial, whatsapp))) || numero !== whatsapp;
   const entrega = valores.cobertura_km > 0;
   const coberturas = COBERTURAS.includes(inicial.cobertura_km)
     ? COBERTURAS
@@ -105,7 +117,6 @@ export function TarifasVista({ inicial }: { inicial: Tarifas }) {
   const transporte: Transporte = valores;
 
   // Ejemplos en vivo mientras la compañía escribe.
-  const depPct = Number.isFinite(valores.deposito_pct) ? Math.min(Math.max(valores.deposito_pct, 0), 100) : 0;
   const distancias = [...new Set([5, 15, valores.cobertura_km])].filter((d) => d <= valores.cobertura_km);
   const ejemploTransporte =
     valores.transporte_modo === "fijo"
@@ -125,13 +136,17 @@ export function TarifasVista({ inicial }: { inicial: Tarifas }) {
     setOcupado(true);
     setError("");
     // .select() confirma que de verdad se actualizó la fila (las reglas de acceso no dan error si no la encuentran).
-    const { data, error: err } = await createClient()
-      .from("companias")
-      .update(valores)
-      .eq("id", inicial.id)
-      .select("id");
+    const supabase = createClient();
+    const [tarifas, contacto] = await Promise.all([
+      supabase.from("companias").update(valores).eq("id", inicial.id).select("id"),
+      supabase.from("companias_privado").update({ whatsapp: numero }).eq("compania_id", inicial.id).select("compania_id"),
+    ]);
     setOcupado(false);
-    if (err || !data?.length) {
+    if (contacto.error?.code === "42703") {
+      setError("Falta ejecutar el SQL 0008_beta_conexion.sql en Supabase para guardar el WhatsApp.");
+      return;
+    }
+    if (tarifas.error || !tarifas.data?.length || contacto.error || !contacto.data?.length) {
       setError("No pudimos guardar tus tarifas. Revisa tu conexión e intenta de nuevo.");
       return;
     }
@@ -142,33 +157,28 @@ export function TarifasVista({ inicial }: { inicial: Tarifas }) {
   return (
     <div className="tarifas">
       <form className="form" onSubmit={guardar} noValidate>
-        <section className="card" aria-labelledby="t-dep">
-          <h2 id="t-dep">Depósito reembolsable</h2>
+        <section className="card" aria-labelledby="t-wa">
+          <h2 id="t-wa">WhatsApp para cotizaciones</h2>
           <p className="fine">
-            Porcentaje del alquiler que el cliente deja en garantía. ENRENTA lo guarda y se lo devuelve al cliente cuando
-            registras la revisión final sin novedades.
+            Aquí te escriben los clientes cuando piden una cotización desde su rider. Solo se le entrega a quien pide una
+            cotización.
           </p>
           <div className="field">
-            <label htmlFor="t-deposito">Porcentaje del alquiler</label>
-            <div className="unidad">
-              <input
-                id="t-deposito"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={100}
-                step={5}
-                value={f.deposito}
-                onChange={texto("deposito")}
-              />
-              <span aria-hidden="true">%</span>
-            </div>
+            <label htmlFor="t-whatsapp">Número de WhatsApp</label>
+            <input
+              id="t-whatsapp"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="300 123 4567"
+              value={f.whatsapp}
+              onChange={texto("whatsapp")}
+            />
+            <span className="hint">Un celular colombiano de 10 dígitos, o el número con su indicativo si es de otro país.</span>
           </div>
-          <p className="ejemplo">
-            En un alquiler de {pesos(1000000)}, el depósito sería {pesos(Math.round((1000000 * depPct) / 100))}.
-          </p>
         </section>
 
+        {/* BETA: sin depósito (se conserva el valor guardado para el modelo completo, pero no se muestra). */}
         <section className="card" aria-labelledby="t-tr">
           <h2 id="t-tr">Transporte</h2>
           <div className="field">
@@ -325,20 +335,16 @@ function Simulador({ f, valores }: { f: Form; valores: ReturnType<typeof aGuarda
   const costo = costoTransporte(valores, km);
   const fueraDeCobertura = quiereEntrega && costo === null;
   const tecnicoDia = valores.tecnico_nombre && valores.tecnico_tarifa_dia ? valores.tecnico_tarifa_dia : 0;
-  const depPct = Number.isFinite(valores.deposito_pct) ? Math.min(Math.max(valores.deposito_pct, 0), 100) : 0;
 
   const alquiler = soloNumero(alquilerDia) * dias;
   const transporte = quiereEntrega ? costo ?? 0 : 0;
   const tecnico = conTecnico && tecnicoDia ? tecnicoDia * dias : 0;
   const base = alquiler + transporte + tecnico;
-  const servicio = Math.round(base * SERVICIO);
-  const deposito = Math.round((alquiler * depPct) / 100);
-  const comision = Math.round(base * COMISION);
 
   return (
     <aside className="card sim" aria-labelledby="sim-titulo">
       <div>
-        <h2 id="sim-titulo">Así se ve una reserva</h2>
+        <h2 id="sim-titulo">Así se ve una cotización</h2>
         <p className="fine">Prueba tus tarifas con un ejemplo. Aquí no se guarda nada.</p>
       </div>
       <div className="form-grid">
@@ -395,7 +401,7 @@ function Simulador({ f, valores }: { f: Form; valores: ReturnType<typeof aGuarda
         </p>
       )}
 
-      <h3 className="lbl">Paga el cliente</h3>
+      <h3 className="lbl">Precio de referencia que ve el cliente</h3>
       <dl className="cobro">
         <div>
           <dt>
@@ -413,38 +419,14 @@ function Simulador({ f, valores }: { f: Form; valores: ReturnType<typeof aGuarda
             <dd>{pesos(tecnico)}</dd>
           </div>
         )}
-        <div>
-          <dt>Tarifa de servicio ENRENTA ({Math.round(SERVICIO * 100)} %)</dt>
-          <dd>{pesos(servicio)}</dd>
-        </div>
-        <div>
-          <dt>Depósito reembolsable ({depPct} %)</dt>
-          <dd>{pesos(deposito)}</dd>
-        </div>
         <div className="total">
-          <dt>Total</dt>
-          <dd>{pesos(base + servicio + deposito)}</dd>
-        </div>
-      </dl>
-
-      <h3 className="lbl">Recibes tú</h3>
-      <dl className="cobro">
-        <div>
-          <dt>Alquiler, transporte y técnico</dt>
+          <dt>Total de referencia</dt>
           <dd>{pesos(base)}</dd>
-        </div>
-        <div>
-          <dt>Comisión ENRENTA ({Math.round(COMISION * 100)} %)</dt>
-          <dd>− {pesos(comision)}</dd>
-        </div>
-        <div className="total">
-          <dt>Recibes</dt>
-          <dd>{pesos(base - comision)}</dd>
         </div>
       </dl>
       <p className="fine">
-        La tarifa de servicio la paga el cliente y el depósito no hace parte de tu pago: ENRENTA lo guarda y se lo devuelve
-        al cliente al cerrar la entrega sin novedades.
+        Durante la BETA, ENRENTA no cobra comisión: el precio final y la forma de pago los acuerdas directamente con el
+        cliente por WhatsApp.
       </p>
     </aside>
   );

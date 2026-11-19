@@ -290,7 +290,15 @@ export function generarPDF(d: DatosDoc): jsPDF {
   const base = c.alquiler + c.transporte + c.tecnico;
   type Fila = { k: string; v: string; fuerte?: boolean; linea?: boolean };
   const totales: Fila[] =
-    d.tipo === "liquidacion"
+    d.tipo === "cotizacion"
+      ? [
+          // BETA: precio de referencia; ENRENTA no cobra servicio ni recibe pagos.
+          { k: `Alquiler (${d.evento.dias} ${d.evento.dias === 1 ? "día" : "días"})`, v: cop(c.alquiler) },
+          { k: "Transporte (entrega y recogida)", v: d.evento.modalidad === "retiro" ? "Retiro en bodega · $ 0" : cop(c.transporte) },
+          ...(c.tecnico > 0 ? [{ k: "Técnico", v: cop(c.tecnico) }] : []),
+          { k: "TOTAL DE REFERENCIA", v: cop(c.alquiler + c.transporte + c.tecnico), fuerte: true, linea: true },
+        ]
+      : d.tipo === "liquidacion"
       ? [
           { k: `Alquiler (${d.evento.dias} ${d.evento.dias === 1 ? "día" : "días"})`, v: cop(c.alquiler) },
           { k: "Transporte", v: d.evento.modalidad === "retiro" ? "Retiro en bodega · $ 0" : cop(c.transporte) },
@@ -324,9 +332,9 @@ export function generarPDF(d: DatosDoc): jsPDF {
   // ---- Notas ----
   const notas: Record<TipoDoc, string[]> = {
     cotizacion: [
-      "Cotización informativa: los equipos quedan apartados solo cuando la compañía acepta la reserva.",
-      "Los precios los define la compañía. Se cobra un día por cada 24 horas entre la entrega y la recogida.",
-      "El depósito es reembolsable y se devuelve al cerrar la entrega sin novedades.",
+      "Cotización de referencia generada en ENRENTA (BETA). El valor final y la forma de pago se acuerdan directamente con la compañía; ENRENTA no cobra ni recibe pagos.",
+      "Los precios los define la compañía. Se cuenta un día por cada 24 horas entre la entrega y la recogida.",
+      "El equipo queda apartado cuando la compañía marca la solicitud como rentada.",
     ],
     comprobante: [
       "Este comprobante no es una factura electrónica. La factura electrónica (DIAN) se emitirá cuando ENRENTA active la facturación electrónica.",

@@ -16,8 +16,8 @@ export default function Inventario({ searchParams }: PageProps<"/tengo/inventari
         <div>
           <h1 className="title-lg">Inventario y agenda</h1>
           <p className="muted">
-            Unidades libres por día para los próximos 14 días. Las reservas pendientes ya apartan stock; los bloqueos
-            sirven para mantenimiento o uso propio.
+            Unidades libres por día para los próximos 14 días. Las solicitudes que marcas como rentadas apartan stock; los
+            bloqueos sirven para mantenimiento, uso propio o rentas que cerraste por fuera de ENRENTA.
           </p>
         </div>
       </div>
@@ -56,7 +56,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/tengo/inventario">, 
       .from("reservas")
       .select("id, codigo, estado, entrega, recogida, modalidad, lugar_nombre, reserva_items(equipo_id, nombre, cantidad)")
       .eq("compania_id", cid)
-      .in("estado", ["pendiente", "confirmada", "en_curso"])
+      .in("estado", ["confirmada", "en_curso"]) // BETA: solo las rentadas apartan equipo
       .gte("recogida", inicioCO(hoy).toISOString())
       .order("entrega"),
     supabase.from("bloqueos").select("id, equipo_id, cantidad, desde, hasta, motivo").gte("hasta", new Date().toISOString()).order("desde"),

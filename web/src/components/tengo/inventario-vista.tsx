@@ -163,7 +163,7 @@ export function InventarioVista({
                         <td key={d}>
                           <div
                             className={`cell ${nivel} ${o.bloqueadas ? "blk" : ""}`}
-                            title={`${d}: ${o.usadas} reservadas${o.bloqueadas ? `, ${o.bloqueadas} bloqueadas` : ""}, ${libres} libres de ${e.unidades}`}
+                            title={`${d}: ${o.usadas} rentadas${o.bloqueadas ? `, ${o.bloqueadas} bloqueadas` : ""}, ${libres} libres de ${e.unidades}`}
                           >
                             {libres}
                           </div>
@@ -222,7 +222,7 @@ export function InventarioVista({
                 <tr>
                   <th scope="col">Cuándo</th>
                   <th scope="col">Movimiento</th>
-                  <th scope="col">Reserva</th>
+                  <th scope="col">Solicitud</th>
                   <th scope="col">Equipos</th>
                   <th scope="col">Dónde</th>
                 </tr>
@@ -237,8 +237,7 @@ export function InventarioVista({
                       </span>
                     </td>
                     <td>
-                      <Link href={`/reservas/${r.id}?de=tengo`} className="code">{r.codigo}</Link>{" "}
-                      {r.estado === "pendiente" && <span className="tag warn sm">Por confirmar</span>}
+                      <Link href="/tengo/panel" className="code">{r.codigo}</Link>
                     </td>
                     <td>{r.reserva_items.map((i) => `${i.cantidad}× ${i.nombre}`).join(", ")}</td>
                     <td>{r.modalidad === "entrega" ? r.lugar_nombre : "Tu bodega"}</td>

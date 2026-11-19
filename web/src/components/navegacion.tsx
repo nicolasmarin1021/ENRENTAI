@@ -14,12 +14,8 @@ export type DatosNav = {
   admin: boolean;
   compania: { nombre: string; iniciales: string } | null;
   conteos: {
-    misReservas: number; // pendientes, confirmadas o en curso del cliente
-    entregasCliente: number; // en curso: el cliente tiene pasos por registrar
-    porResponder: number; // solicitudes pendientes de la compañía
-    entregasCompania: number; // confirmadas o en curso de la compañía
-    chatsCliente: number; // mensajes sin leer de las compañías
-    chatsCompania: number; // mensajes sin leer de los clientes
+    misReservas: number; // solicitudes activas del cliente (por confirmar o rentadas)
+    porResponder: number; // solicitudes por confirmar de la compañía
   };
 };
 
@@ -54,25 +50,11 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
     return () => ro.disconnect();
   }, []);
 
+  // BETA: la conversación y el pago van por WhatsApp, así que no hay chat, entregas, pagos ni liquidaciones.
   const cliente: Pestana[] = [
     { href: "/explorar", texto: "Explorar", activa: (r) => r === "/explorar" || r === "/necesito" },
     { href: "/explorar/rider", texto: "Rider", cuenta: enRider, caliente: enRider > 0, activa: (r) => r === "/explorar/rider" },
-    { href: "/necesito/reservas", texto: "Mis reservas", cuenta: c.misReservas, activa: (r) => empieza(r, "/necesito/reservas") },
-    {
-      href: "/necesito/entregas",
-      texto: "Entregas",
-      cuenta: c.entregasCliente,
-      caliente: c.entregasCliente > 0,
-      activa: (r) => empieza(r, "/necesito/entregas", "/reservas"),
-    },
-    {
-      href: "/necesito/chats",
-      texto: "Chats",
-      cuenta: c.chatsCliente,
-      caliente: c.chatsCliente > 0,
-      activa: (r) => empieza(r, "/necesito/chats"),
-    },
-    { href: "/necesito/pagos", texto: "Pagos", activa: (r) => empieza(r, "/necesito/pagos") },
+    { href: "/necesito/reservas", texto: "Mis solicitudes", cuenta: c.misReservas, activa: (r) => empieza(r, "/necesito/reservas") },
   ];
   const compania: Pestana[] = [
     {
@@ -84,20 +66,6 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
     },
     { href: "/tengo/inventario", texto: "Inventario y agenda", activa: (r) => empieza(r, "/tengo/inventario") },
     { href: "/tengo/tarifas", texto: "Tarifas", activa: (r) => empieza(r, "/tengo/tarifas") },
-    {
-      href: "/tengo/reservas",
-      texto: "Entregas",
-      cuenta: c.entregasCompania,
-      activa: (r) => empieza(r, "/tengo/reservas", "/reservas"),
-    },
-    {
-      href: "/tengo/mensajes",
-      texto: "Mensajes",
-      cuenta: c.chatsCompania,
-      caliente: c.chatsCompania > 0,
-      activa: (r) => empieza(r, "/tengo/mensajes"),
-    },
-    { href: "/tengo/liquidaciones", texto: "Liquidaciones", activa: (r) => empieza(r, "/tengo/liquidaciones") },
   ];
   const pestanas = modo === "compania" ? compania : modo === "cliente" ? cliente : [];
 
@@ -169,15 +137,13 @@ function Cuenta({ datos, modo }: { datos: DatosNav; modo: "cliente" | "compania"
     ? [
         { href: "/tengo/panel", texto: "Panel" },
         { href: "/tengo/inventario", texto: "Inventario y agenda" },
-        { href: "/tengo/tarifas", texto: "Tarifas" },
-        { href: "/tengo/reservas", texto: "Entregas y devoluciones" },
-        { href: "/tengo/mensajes", texto: "Mensajes" },
+        { href: "/tengo/tarifas", texto: "Tarifas y WhatsApp" },
+        { href: "/como-funciona", texto: "Cómo funciona la BETA" },
       ]
     : [
-        { href: "/necesito/reservas", texto: "Mis reservas" },
-        { href: "/necesito/entregas", texto: "Entregas" },
-        { href: "/necesito/pagos", texto: "Pagos" },
-        { href: "/necesito/chats", texto: "Chats" },
+        { href: "/necesito/reservas", texto: "Mis solicitudes" },
+        { href: "/explorar/rider", texto: "Mi rider" },
+        { href: "/como-funciona", texto: "Cómo funciona la BETA" },
       ];
 
   return (

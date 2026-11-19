@@ -14,9 +14,9 @@ export default function PaginaTarifas() {
         <div>
           <h1 className="title-lg">Tarifas</h1>
           <p className="muted">
-            Define cómo cobras el depósito, el transporte y el técnico. Los precios por día de cada equipo se editan en{" "}
-            <Link href="/tengo/inventario">Inventario</Link>. Los cambios aplican a las solicitudes nuevas; las reservas
-            que ya existen conservan sus valores.
+            Tu WhatsApp para cotizaciones y las tarifas de referencia que ven los clientes: transporte y técnico.
+            Los precios por día de cada equipo se editan en <Link href="/tengo/inventario">Inventario</Link>. Los cambios
+            aplican a las solicitudes nuevas.
           </p>
         </div>
       </div>
@@ -59,5 +59,11 @@ async function Contenido() {
       horario_bodega: string | null;
     }>();
   if (!c) return <p className="form-err">No pudimos cargar tus tarifas. Recarga la página.</p>;
-  return <TarifasVista inicial={{ ...c, deposito_pct: Number(c.deposito_pct) }} />;
+  // WhatsApp para cotizaciones (privado: solo lo ve el dueño). Si falta el SQL 0008, queda vacío.
+  const { data: contacto } = await supabase
+    .from("companias_privado")
+    .select("whatsapp")
+    .eq("compania_id", s.compania.id)
+    .maybeSingle<{ whatsapp: string | null }>();
+  return <TarifasVista inicial={{ ...c, deposito_pct: Number(c.deposito_pct) }} whatsapp={contacto?.whatsapp ?? ""} />;
 }

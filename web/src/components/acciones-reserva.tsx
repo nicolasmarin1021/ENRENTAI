@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { enlaceWhatsApp, prepararPestana } from "@/lib/whatsapp";
 
-// El cliente cancela su reserva (pendiente o confirmada, antes de la entrega).
+// El cliente cancela su solicitud (por confirmar o rentada, antes de la entrega).
 export function CancelarReserva({ id }: { id: string }) {
   const router = useRouter();
   const [confirmar, setConfirmar] = useState(false);
@@ -16,7 +17,7 @@ export function CancelarReserva({ id }: { id: string }) {
     const { error: e } = await createClient().rpc("cancelar_reserva", { p_id: id });
     setOcupado(false);
     if (e) {
-      setError(e.message || "No pudimos cancelar la reserva.");
+      setError(e.message || "No pudimos cancelar la solicitud.");
       return;
     }
     router.refresh();
@@ -27,7 +28,7 @@ export function CancelarReserva({ id }: { id: string }) {
       {confirmar ? (
         <>
           <button type="button" className="btn danger solid" onClick={cancelar} disabled={ocupado}>
-            {ocupado ? "Cancelando…" : "Sí, cancelar reserva"}
+            {ocupado ? "Cancelando…" : "Sí, cancelar solicitud"}
           </button>
           <button type="button" className="link-btn" onClick={() => setConfirmar(false)} disabled={ocupado}>
             No, mantenerla
@@ -35,7 +36,7 @@ export function CancelarReserva({ id }: { id: string }) {
         </>
       ) : (
         <button type="button" className="btn danger" onClick={() => setConfirmar(true)}>
-          Cancelar reserva
+          Cancelar solicitud
         </button>
       )}
       {error && <span className="form-err" role="alert">{error}</span>}
@@ -43,31 +44,31 @@ export function CancelarReserva({ id }: { id: string }) {
   );
 }
 
-// La compañía acepta o rechaza una solicitud pendiente.
+// La compañía marca la solicitud: "Rentada" (aparta el equipo en su agenda) o "No se concretó".
 export function ResponderReserva({ id }: { id: string }) {
   const router = useRouter();
-  const [rechazando, setRechazando] = useState(false);
+  const [noConcreto, setNoConcreto] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState("");
 
-  async function responder(aceptar: boolean) {
+  async function responder(rentada: boolean) {
     setOcupado(true);
     setError("");
     const { error: e } = await createClient().rpc("responder_reserva", {
       p_id: id,
-      p_aceptar: aceptar,
-      p_motivo: aceptar ? null : motivo.trim() || null,
+      p_aceptar: rentada,
+      p_motivo: rentada ? null : motivo.trim() || null,
     });
     setOcupado(false);
     if (e) {
-      setError(e.message || "No pudimos guardar tu respuesta.");
+      setError(e.message || "No pudimos guardar. Intenta de nuevo.");
       return;
     }
     router.refresh();
   }
 
-  if (rechazando) {
+  if (noConcreto) {
     return (
       <div className="form">
         <div className="field">
@@ -75,16 +76,16 @@ export function ResponderReserva({ id }: { id: string }) {
           <input
             id={`motivo-${id}`}
             maxLength={500}
-            placeholder="Ej.: ese fin de semana el equipo está en mantenimiento"
+            placeholder="Ej.: ese fin de semana el equipo ya estaba comprometido"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />
         </div>
         <div className="row-actions">
           <button type="button" className="btn danger solid" onClick={() => responder(false)} disabled={ocupado}>
-            {ocupado ? "Enviando…" : "Rechazar solicitud"}
+            {ocupado ? "Guardando…" : "Marcar como no concretada"}
           </button>
-          <button type="button" className="link-btn" onClick={() => setRechazando(false)} disabled={ocupado}>
+          <button type="button" className="link-btn" onClick={() => setNoConcreto(false)} disabled={ocupado}>
             Volver
           </button>
         </div>
@@ -96,11 +97,44 @@ export function ResponderReserva({ id }: { id: string }) {
   return (
     <>
       {error && <span className="form-err" role="alert">{error}</span>}
-      <button type="button" className="btn" onClick={() => setRechazando(true)} disabled={ocupado}>
-        Rechazar
+      <button type="button" className="btn" onClick={() => setNoConcreto(true)} disabled={ocupado}>
+        No se concretó
       </button>
       <button type="button" className="btn primary" onClick={() => responder(true)} disabled={ocupado}>
-        {ocupado ? "Enviando…" : "Aceptar solicitud"}
+        {ocupado ? "Guardando…" : "Marcar como rentada"}
+      </button>
+    </>
+  );
+}
+
+// El cliente vuelve a escribirle a la compañía por WhatsApp sobre una solicitud.
+export function EscribirWhatsApp({ id, codigo, compania }: { id: string; codigo: string; compania: string }) {
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState("");
+
+  async function abrir() {
+    const pestana = prepararPestana();
+    setOcupado(true);
+    setError("");
+    const { data, error: e } = await createClient().rpc("whatsapp_de_solicitud", { p_id: id });
+    setOcupado(false);
+    if (e || typeof data !== "string" || !data) {
+      pestana.cerrar();
+      setError(
+        e?.code === "PGRST202"
+          ? "Falta ejecutar el SQL 0008_beta_conexion.sql en Supabase."
+          : "No encontramos el WhatsApp de la compañía.",
+      );
+      return;
+    }
+    pestana.ir(enlaceWhatsApp(data, `Hola ${compania}, te escribo por la solicitud ${codigo} de ENRENTA.`));
+  }
+
+  return (
+    <>
+      {error && <span className="form-err" role="alert">{error}</span>}
+      <button type="button" className="btn whatsapp" onClick={abrir} disabled={ocupado}>
+        {ocupado ? "Abriendo…" : "Escribir por WhatsApp"}
       </button>
     </>
   );

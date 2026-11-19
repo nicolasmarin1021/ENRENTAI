@@ -13,6 +13,7 @@ import { costoTransporte, distanciaKm, textoKm } from "@/lib/geo";
 import { pesos } from "@/lib/medellin";
 import { useEsAngosto } from "@/lib/pantalla";
 import { conCantidad, diasDeRenta, type GuardarPedido, type Necesidad, type Pedido } from "@/lib/pedido";
+import { textoResumen } from "@/lib/resenas";
 
 type Paso = 1 | 2 | 3;
 type Nivel = "alto" | "medio" | "nada";
@@ -278,7 +279,10 @@ export function VistaMapa({
                 <span className={`pc-dot ${r.nivel}`}>{r.texto}</span>
                 <span>
                   <b>{r.c.nombre}</b>
-                  <span className="fine">{r.sub}</span>
+                  <span className="fine">
+                    {textoResumen(r.c.resenas) ? <span className="estrellas-txt">{textoResumen(r.c.resenas)} · </span> : null}
+                    {r.sub}
+                  </span>
                 </span>
               </button>
             ))}
@@ -351,7 +355,15 @@ function VentanaCompania({
             Bodega en {c.zona ?? c.ciudad} · a {textoKm(r.dist)} de {pedido.lugar?.nombre}
           </span>
           <h2>{c.nombre}</h2>
-          <span className="fine">{c.verificada ? <span className="ok-txt">✓ Verificada</span> : "Nueva en ENRENTA"}</span>
+          <span className="fine">
+            {c.verificada ? <span className="ok-txt">✓ Verificada</span> : "Nueva en ENRENTA"}
+            {" · "}
+            {textoResumen(c.resenas) ? <span className="estrellas-txt">{textoResumen(c.resenas)}</span> : "Sin reseñas aún"}
+            {" · "}
+            <Link href={`/compania/${c.id}`} className="link-btn">
+              Perfil y reseñas
+            </Link>
+          </span>
         </div>
         <button type="button" className="cerrar" onClick={onCerrar} aria-label="Cerrar">
           ×
@@ -365,7 +377,6 @@ function VentanaCompania({
               ? `Entrega solo hasta ${c.cobertura_km} km`
               : "Solo retiro en bodega"}
         </span>
-        <span className="tag">Depósito {c.deposito_pct} %</span>
         {c.tecnico_nombre && c.tecnico_tarifa_dia ? (
           <span className="tag">
             {c.tecnico_nombre} · {pesos(c.tecnico_tarifa_dia)}/día
@@ -383,7 +394,7 @@ function VentanaCompania({
             </div>
             <ul className="pop-sub">
               {items.map((e) => (
-                <FilaEquipo key={e.id} e={e} dias={dias} pide={n.cantidad} pct={c.deposito_pct} rider={rider} onFicha={onFicha} />
+                <FilaEquipo key={e.id} e={e} dias={dias} pide={n.cantidad} rider={rider} onFicha={onFicha} />
               ))}
             </ul>
           </li>
@@ -397,7 +408,7 @@ function VentanaCompania({
             )}
             <ul className="pop-sub">
               {otros.map((e) => (
-                <FilaEquipo key={e.id} e={e} dias={dias} pide={1} pct={c.deposito_pct} rider={rider} onFicha={onFicha} />
+                <FilaEquipo key={e.id} e={e} dias={dias} pide={1} rider={rider} onFicha={onFicha} />
               ))}
             </ul>
           </li>
@@ -422,14 +433,12 @@ function FilaEquipo({
   e,
   dias,
   pide,
-  pct,
   rider,
   onFicha,
 }: {
   e: EquipoPublico;
   dias: number;
   pide: number;
-  pct: number;
   rider: Rider;
   onFicha: (e: EquipoPublico) => void;
 }) {
@@ -492,7 +501,7 @@ function FilaEquipo({
                   Total {dias} {dias === 1 ? "día" : "días"}: {pesos(total)}
                 </b>
                 <span>
-                  {cant} × {pesos(e.precio_dia)} por día · depósito {pesos(Math.round((total * pct) / 100))}
+                  {cant} × {pesos(e.precio_dia)} por día · precio de referencia
                 </span>
               </div>
               <button type="button" className="btn primary" onClick={() => rider.cambiar(e, cant)} disabled={enRider === cant}>

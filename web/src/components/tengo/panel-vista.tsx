@@ -3,8 +3,10 @@ import { Mapa, type Marcador } from "@/components/mapa";
 import { TarjetaReserva, type ReservaFila } from "@/components/tarjeta-reserva";
 import { UbicacionBodega } from "@/components/ubicacion-bodega";
 import { hoyCO, ocupacionDia, sumarDias, type Movimiento } from "@/lib/agenda";
+import { Estrellas, ListaResenas } from "@/components/resenas";
 import { ESTADOS_RESERVA } from "@/lib/cobro";
 import { pesos, rangoCO } from "@/lib/medellin";
+import { promedioTexto, type Resena } from "@/lib/resenas";
 
 export type CompaniaPanel = {
   id: string;
@@ -18,7 +20,10 @@ export type CompaniaPanel = {
 };
 export type BloqueoPanel = { equipo_id: string; cantidad: number; desde: string; hasta: string };
 
-const neto = (r: ReservaFila) => r.alquiler + r.transporte + r.tecnico - r.comision;
+// BETA: precio de referencia de la solicitud (sin comisión de ENRENTA).
+const valor = (r: ReservaFila) => r.alquiler + r.transporte + r.tecnico;
+// Rentada y todavía no ha pasado la recogida (las ya terminadas pasan al historial).
+const vigente = (r: ReservaFila) => Date.parse(r.recogida) >= Date.now();
 
 // Panel de la compañía (solo dibuja; los datos los trae la página).
 export function PanelVista({
@@ -26,27 +31,29 @@ export function PanelVista({
   reservas,
   equipos,
   bloqueos,
+  resenas,
 }: {
   c: CompaniaPanel;
   reservas: ReservaFila[];
   equipos: { id: string; unidades: number }[];
   bloqueos: BloqueoPanel[];
+  resenas: Resena[];
 }) {
   const pendientes = reservas.filter((r) => r.estado === "pendiente");
-  const enCurso = reservas.filter((r) => r.estado === "confirmada" || r.estado === "en_curso");
+  const rentada = (r: ReservaFila) => r.estado === "confirmada" || r.estado === "en_curso";
+  const enCurso = reservas.filter((r) => rentada(r) && vigente(r));
   const historial = reservas
-    .filter((r) => ["completada", "cancelada", "rechazada"].includes(r.estado))
+    .filter((r) => ["completada", "cancelada", "rechazada"].includes(r.estado) || (rentada(r) && !vigente(r)))
     .sort((a, b) => (b.actualizado ?? b.creado).localeCompare(a.actualizado ?? a.creado))
     .slice(0, 6);
 
   // Indicadores
   const mesActual = hoyCO().slice(0, 7);
-  const liquidadoMes = reservas
-    .filter((r) => r.estado === "completada" && (r.actualizado ?? "").slice(0, 7) === mesActual)
-    .reduce((a, r) => a + neto(r), 0);
+  const contactosMes = reservas.filter((r) => r.creado.slice(0, 7) === mesActual).length;
   const nombreMes = new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", month: "long" }).format(new Date());
+  // Solo las rentadas (y los bloqueos) apartan equipo en la agenda.
   const movs: Movimiento[] = [
-    ...[...pendientes, ...enCurso].flatMap((r) =>
+    ...enCurso.flatMap((r) =>
       r.reserva_items.map((i) => ({ equipo_id: i.equipo_id, cantidad: i.cantidad, desde: r.entrega, hasta: r.recogida, bloqueo: false })),
     ),
     ...bloqueos.map((b) => ({ ...b, bloqueo: true })),
@@ -64,6 +71,7 @@ export function PanelVista({
     0,
   );
   const ocupacion = capacidad ? Math.round((ocupado / capacidad) * 100) : 0;
+  const promedio = resenas.length ? resenas.reduce((a, r) => a + r.estrellas, 0) / resenas.length : 0;
   const desde = new Date(c.creado).getFullYear();
 
   // Mapa: la bodega y los lugares a donde va el equipo.
@@ -97,33 +105,31 @@ export function PanelVista({
 
       <div className="kpis">
         <div className={`card kpi ${pendientes.length ? "alerta" : ""}`}>
-          <span className="lbl">Solicitudes por responder</span>
+          <span className="lbl">Solicitudes por confirmar</span>
           <b>{pendientes.length}</b>
-          <span className="fine">{pendientes.length ? `${pesos(pendientes.reduce((a, r) => a + neto(r), 0))} en juego` : "Al día"}</span>
+          <span className="fine">{pendientes.length ? `${pesos(pendientes.reduce((a, r) => a + valor(r), 0))} en cotizaciones` : "Al día"}</span>
         </div>
         <div className="card kpi">
-          <span className="lbl">Por liquidar</span>
-          <b>{pesos(enCurso.reduce((a, r) => a + neto(r), 0))}</b>
-          <span className="fine">
-            {enCurso.length} {enCurso.length === 1 ? "reserva confirmada" : "reservas confirmadas"}; se paga al registrar la devolución
-          </span>
+          <span className="lbl">Rentadas próximas</span>
+          <b>{enCurso.length}</b>
+          <span className="fine">{pesos(enCurso.reduce((a, r) => a + valor(r), 0))} en precio de referencia</span>
         </div>
         <div className="card kpi">
-          <span className="lbl">Liquidado en {nombreMes}</span>
-          <b>{pesos(liquidadoMes)}</b>
-          <span className="fine">ya descontada la comisión</span>
+          <span className="lbl">Contactos en {nombreMes}</span>
+          <b>{contactosMes}</b>
+          <span className="fine">cotizaciones pedidas por WhatsApp</span>
         </div>
         <div className="card kpi">
           <span className="lbl">Ocupación · 14 días</span>
           <b>{ocupacion} %</b>
-          <span className="fine">unidades-día reservadas o bloqueadas</span>
+          <span className="fine">unidades-día rentadas o bloqueadas</span>
         </div>
       </div>
 
       {!c.verificada && (
         <p className="note">
           ENRENTA revisa los datos de tu compañía antes de mostrar el sello de verificada. Mientras tanto ya puedes publicar y
-          recibir reservas.
+          recibir solicitudes.
         </p>
       )}
 
@@ -139,27 +145,27 @@ export function PanelVista({
             </div>
           )}
 
-          <section className="bk-list" aria-label="Solicitudes por responder">
+          <section className="bk-list" aria-label="Solicitudes por confirmar">
             <div className="sec-hd">
-              <h2>Solicitudes por responder</h2>
-              <span className="fine">Las unidades quedan apartadas hasta que respondas</span>
+              <h2>Solicitudes por confirmar</h2>
+              <span className="fine">Cotizaciones que te pidieron por WhatsApp; no apartan equipo hasta que las marques como rentadas</span>
             </div>
             {pendientes.length ? (
               pendientes.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" />)
             ) : (
-              <p className="vacio">No tienes solicitudes pendientes.</p>
+              <p className="vacio">No tienes solicitudes por confirmar.</p>
             )}
           </section>
 
-          <section className="bk-list" aria-label="Confirmadas y en curso">
+          <section className="bk-list" aria-label="Rentadas">
             <div className="sec-hd">
-              <h2>Confirmadas y en curso</h2>
-              <span className="fine">Registra la salida y la devolución con fotos desde aquí</span>
+              <h2>Rentadas</h2>
+              <span className="fine">El equipo queda apartado en tu agenda en esas fechas</span>
             </div>
             {enCurso.length ? (
               enCurso.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" />)
             ) : (
-              <p className="vacio">No tienes reservas confirmadas.</p>
+              <p className="vacio">Aún no tienes solicitudes rentadas.</p>
             )}
           </section>
         </div>
@@ -195,8 +201,29 @@ export function PanelVista({
                 })}
               </ul>
             ) : (
-              <p className="fine">Aquí verás las reservas cerradas, canceladas o rechazadas.</p>
+              <p className="fine">Aquí verás las solicitudes que no se concretaron o que el cliente canceló.</p>
             )}
+          </section>
+
+          <section className="card side-card" aria-labelledby="panel-resenas">
+            <div className="sec-hd">
+              <h2 id="panel-resenas">Reseñas</h2>
+              <span className="fine">
+                {resenas.length ? (
+                  <>
+                    <Estrellas valor={promedio} /> {promedioTexto(promedio)} · {resenas.length}{" "}
+                    {resenas.length === 1 ? "reseña" : "reseñas"}
+                  </>
+                ) : (
+                  "Aún no tienes"
+                )}
+              </span>
+            </div>
+            <ListaResenas resenas={resenas.slice(0, 5)} compania={c.nombre} puedeResponder />
+            <p className="fine">
+              Los clientes califican las solicitudes que marcas como rentadas.{" "}
+              <Link href={`/compania/${c.id}`}>Ver tu perfil público</Link> (puedes compartir ese enlace).
+            </p>
           </section>
 
           <section className="card side-card">

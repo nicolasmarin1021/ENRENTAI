@@ -1,5 +1,6 @@
 import type { EstadoEquipo } from "./catalogo";
 import type { Transporte } from "./geo";
+import type { ResumenResenas } from "./resenas";
 import { supabaseConfigured } from "./supabase/config";
 import { crearClientePublico } from "./supabase/publico";
 
@@ -34,6 +35,7 @@ export type CompaniaPublica = Transporte & {
   tecnico_nombre: string | null;
   tecnico_tarifa_dia: number | null;
   equipos: EquipoPublico[];
+  resenas: ResumenResenas | null; // promedio y cantidad (null si aún no tiene)
 };
 
 export type LugarPublico = { id: string; nombre: string; direccion: string | null; lat: number; lng: number };
@@ -43,14 +45,14 @@ export type Catalogo = { companias: CompaniaPublica[]; lugares: LugarPublico[] }
 const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
 
 type FilaEquipo = Omit<EquipoPublico, "fotos" | "compania_id"> & { equipo_fotos: { ruta: string; orden: number }[] };
-type FilaCompania = Omit<CompaniaPublica, "equipos"> & { equipos: FilaEquipo[] };
+type FilaCompania = Omit<CompaniaPublica, "equipos" | "resenas"> & { equipos: FilaEquipo[] };
 
 // Compañías con equipos publicados y lugares públicos. Solo datos públicos: las
 // reglas de la base de datos ya ocultan los equipos en pausa y los datos privados.
 export async function getCatalogo(): Promise<Catalogo> {
   if (!supabaseConfigured) return { companias: [], lugares: [] };
   const sb = crearClientePublico();
-  const [{ data: cs }, { data: ls }] = await Promise.all([
+  const [{ data: cs }, { data: ls }, { data: rs }] = await Promise.all([
     sb
       .from("companias")
       .select(
@@ -60,7 +62,15 @@ export async function getCatalogo(): Promise<Catalogo> {
       .not("lat", "is", null)
       .not("lng", "is", null),
     sb.from("lugares").select("id, nombre, direccion, lat, lng").eq("publico", true).order("nombre"),
+    // Si las reseñas aún no existen en la base de datos (falta 0009), simplemente no se muestran.
+    sb.from("resumen_resenas").select("compania_id, promedio, total"),
   ]);
+  const resumen = new Map(
+    ((rs ?? []) as { compania_id: string; promedio: number; total: number }[]).map((r) => [
+      r.compania_id,
+      { promedio: Number(r.promedio), total: Number(r.total) },
+    ]),
+  );
 
   const companias = ((cs ?? []) as unknown as FilaCompania[])
     .map(
@@ -70,6 +80,7 @@ export async function getCatalogo(): Promise<Catalogo> {
         lng: Number(c.lng),
         deposito_pct: Number(c.deposito_pct),
         tecnico_tarifa_dia: num(c.tecnico_tarifa_dia),
+        resenas: resumen.get(c.id) ?? null,
         equipos: (c.equipos ?? []).map(({ equipo_fotos, ...e }) => ({
           ...e,
           compania_id: c.id,

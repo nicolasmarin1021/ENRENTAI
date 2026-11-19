@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { IconoCategoria } from "@/components/iconos";
 import type { Catalogo, CompaniaPublica, EquipoPublico } from "@/lib/catalogo-publico";
-import { calcularCobro, SERVICIO } from "@/lib/cobro";
+import { calcularCobro } from "@/lib/cobro";
 import { useOcupadas } from "@/lib/disponibilidad";
 import { textoKm } from "@/lib/geo";
 import { pesos } from "@/lib/medellin";
@@ -19,19 +19,22 @@ import {
   type OpcionesCompania,
   type Pedido,
 } from "@/lib/pedido";
+import { textoResumen } from "@/lib/resenas";
 import { createClient } from "@/lib/supabase/client";
+import { enlaceWhatsApp, mensajeSolicitud, prepararPestana } from "@/lib/whatsapp";
 import { BotonPDF } from "../boton-pdf";
 import { HORAS } from "./pasos";
 import { FichaEquipo, type Rider } from "./vista-mapa";
 
 type Linea = { i: ItemRider; e: EquipoPublico };
 type Grupo = { c: CompaniaPublica; lineas: Linea[]; op: OpcionesCompania; modalidad: "entrega" | "retiro"; cobro: ReturnType<typeof calcularCobro> };
-type Resultado = { compania: string; codigo?: string; error?: string };
+type Resultado = { compania: string; codigo?: string; url?: string; error?: string };
 
 const fechaLarga = (s: string) =>
   new Intl.DateTimeFormat("es-CO", { weekday: "short", day: "numeric", month: "short" }).format(new Date(s)).replace(".", "");
 
-// Tu rider: la lista de equipos para un show. Cada compañía recibe su propia solicitud.
+// Tu rider: la lista de equipos para un show. En la BETA, cada compañía recibe su propia
+// solicitud por WhatsApp y el precio y el pago se acuerdan con ella.
 export function RiderVista({
   catalogo,
   conSesion,
@@ -44,7 +47,7 @@ export function RiderVista({
   const router = useRouter();
   const [pedido, guardar] = usePedido();
   const [resultados, setResultados] = useState<Resultado[]>([]);
-  const [enviando, setEnviando] = useState(false);
+  const [enviando, setEnviando] = useState<string | null>(null); // compañía a la que se le está pidiendo
   const [version, setVersion] = useState(0); // recarga la disponibilidad tras reservar
   const [ficha, setFicha] = useState<EquipoPublico | null>(null);
   const ocupadas = useOcupadas(pedido.entrega, pedido.recogida, version);
@@ -87,50 +90,66 @@ export function RiderVista({
         });
 
   const unidades = pedido.rider.reduce((a, i) => a + i.cantidad, 0);
-  const suma = (k: "alquiler" | "transporte" | "tecnico" | "servicio" | "deposito" | "total") =>
-    grupos.reduce((a, g) => a + g.cobro[k], 0);
-  const faltan = grupos.some((g) => g.lineas.some(({ i, e }) => i.cantidad > libres(e)));
+  const referencia = (g: Grupo) => g.cobro.alquiler + g.cobro.transporte + g.cobro.tecnico;
+  const suma = (k: "alquiler" | "transporte" | "tecnico") => grupos.reduce((a, g) => a + g.cobro[k], 0);
+  const falta = (g: Grupo) => g.lineas.some(({ i, e }) => i.cantidad > libres(e));
 
-  async function enviar() {
-    setEnviando(true);
-    const res: Resultado[] = [];
-    const supabase = createClient();
-    for (const g of grupos) {
-      const { data, error } = await supabase.rpc("crear_reserva", {
-        p_compania: g.c.id,
-        p_entrega: aISO(pedido.entrega),
-        p_recogida: aISO(pedido.recogida),
-        p_modalidad: g.modalidad,
-        p_lugar_nombre: lugar!.nombre,
-        p_lugar_direccion: lugar!.direccion ?? null,
-        p_lat: lugar!.lat,
-        p_lng: lugar!.lng,
-        p_con_tecnico: g.op.tecnico,
-        p_nota: pedido.nota.trim() || null,
-        p_items: g.lineas.map(({ i }) => ({ equipo_id: i.equipo_id, cantidad: i.cantidad })),
-      });
-      if (error) {
-        res.push({
-          compania: g.c.nombre,
-          error:
-            error.code === "PGRST202"
-              ? "Las reservas aún no están activadas (falta el SQL 0003_reservas.sql)."
-              : error.message || "No pudimos enviar la solicitud.",
-        });
-      } else {
-        res.push({ compania: g.c.nombre, codigo: (data as { codigo: string }).codigo });
-        // Solo salen del rider los equipos de las compañías que sí recibieron la solicitud.
-        guardar((p) => {
-          const { [g.c.id]: _fuera, ...opciones } = p.opciones;
-          void _fuera;
-          return { ...p, rider: p.rider.filter((i) => i.compania_id !== g.c.id), opciones };
-        });
-      }
+  // Crea la solicitud y abre WhatsApp con el mensaje ya escrito para esa compañía.
+  async function cotizar(g: Grupo) {
+    const pestana = prepararPestana();
+    setEnviando(g.c.id);
+    const { data, error } = await createClient().rpc("crear_solicitud", {
+      p_compania: g.c.id,
+      p_entrega: aISO(pedido.entrega),
+      p_recogida: aISO(pedido.recogida),
+      p_modalidad: g.modalidad,
+      p_lugar_nombre: lugar!.nombre,
+      p_lugar_direccion: lugar!.direccion ?? null,
+      p_lat: lugar!.lat,
+      p_lng: lugar!.lng,
+      p_con_tecnico: g.op.tecnico,
+      p_nota: pedido.nota.trim() || null,
+      p_items: g.lineas.map(({ i }) => ({ equipo_id: i.equipo_id, cantidad: i.cantidad })),
+    });
+    setEnviando(null);
+    const otros = (r: Resultado[]) => r.filter((x) => x.compania !== g.c.nombre);
+    if (error) {
+      pestana.cerrar();
+      const texto =
+        error.code === "PGRST202"
+          ? "Falta ejecutar el SQL 0008_beta_conexion.sql en Supabase."
+          : error.code === "P0001" && error.message
+            ? error.message
+            : "No pudimos crear la solicitud. Revisa tu conexión e intenta de nuevo.";
+      setResultados((r) => [...otros(r), { compania: g.c.nombre, error: texto }]);
+      return;
     }
-    setResultados(res);
-    setEnviando(false);
+    const d = data as { codigo: string; whatsapp: string };
+    const url = enlaceWhatsApp(
+      d.whatsapp,
+      mensajeSolicitud({
+        compania: g.c.nombre,
+        codigo: d.codigo,
+        entrega: aISO(pedido.entrega),
+        recogida: aISO(pedido.recogida),
+        lugar: lugar!.nombre,
+        modalidad: g.modalidad,
+        tecnico: g.cobro.tecnico > 0 ? g.c.tecnico_nombre ?? "técnico" : null,
+        items: g.lineas.map(({ i, e }) => ({ nombre: e.nombre, cantidad: i.cantidad })),
+        referencia: referencia(g),
+        nota: pedido.nota,
+      }),
+    );
+    pestana.ir(url);
+    setResultados((r) => [...otros(r), { compania: g.c.nombre, codigo: d.codigo, url }]);
+    // Los equipos de esa compañía salen del rider: ya quedaron en la solicitud.
+    guardar((p) => {
+      const { [g.c.id]: _fuera, ...opciones } = p.opciones;
+      void _fuera;
+      return { ...p, rider: p.rider.filter((i) => i.compania_id !== g.c.id), opciones };
+    });
     setVersion((v) => v + 1);
-    router.refresh(); // actualiza los contadores de las pestañas
+    router.refresh(); // actualiza el contador de "Mis solicitudes"
   }
 
   const setFecha = (cual: "entrega" | "recogida", fecha: string, hora: string) =>
@@ -145,8 +164,8 @@ export function RiderVista({
           <h1 className="title-lg">Tu rider</h1>
           <p className="muted">
             {grupos.length
-              ? `${unidades} ${unidades === 1 ? "unidad" : "unidades"} de ${grupos.length} ${grupos.length === 1 ? "compañía" : "compañías"} para ${lugar?.nombre}. Cada compañía recibe su propia solicitud.`
-              : "Aquí armas la lista de equipos para un show. Cada compañía recibe su propia solicitud."}
+              ? `${unidades} ${unidades === 1 ? "unidad" : "unidades"} de ${grupos.length} ${grupos.length === 1 ? "compañía" : "compañías"} para ${lugar?.nombre}. A cada compañía le pides la cotización por WhatsApp.`
+              : "Aquí armas la lista de equipos para un show. A cada compañía le pides la cotización por WhatsApp."}
           </p>
         </div>
       </div>
@@ -154,8 +173,14 @@ export function RiderVista({
       {resultados.map((r) =>
         r.codigo ? (
           <p key={r.compania} className="form-ok" role="status">
-            Solicitud <b>{r.codigo}</b> enviada a {r.compania}. Te avisamos cuando responda.{" "}
-            <Link href="/necesito/reservas">Ver mis reservas</Link>
+            Solicitud <b>{r.codigo}</b> lista para {r.compania}: envía el mensaje en WhatsApp para que te responda.{" "}
+            {r.url && (
+              <a href={r.url} target="_blank" rel="noreferrer">
+                Abrir WhatsApp de nuevo
+              </a>
+            )}
+            {" · "}
+            <Link href="/necesito/reservas">Ver mis solicitudes</Link>
           </p>
         ) : (
           <p key={r.compania} className="form-err" role="alert">
@@ -239,27 +264,52 @@ export function RiderVista({
             <div className="rider-grid">
               <div className="rider-col">
                 {grupos.map((g) => (
-                  <TarjetaCompania key={g.c.id} g={g} pedido={pedido} guardar={guardar} dias={dias} libres={libres} onFicha={setFicha} />
+                  <TarjetaCompania
+                    key={g.c.id}
+                    g={g}
+                    pedido={pedido}
+                    guardar={guardar}
+                    dias={dias}
+                    libres={libres}
+                    onFicha={setFicha}
+                    accion={
+                      conSesion ? (
+                        <button
+                          type="button"
+                          className="btn primary whatsapp"
+                          onClick={() => cotizar(g)}
+                          disabled={enviando !== null || falta(g)}
+                        >
+                          {enviando === g.c.id ? "Abriendo WhatsApp…" : "Cotizar por WhatsApp"}
+                        </button>
+                      ) : (
+                        <Link href="/necesito" className="btn primary">
+                          Entra con tu correo para cotizar
+                        </Link>
+                      )
+                    }
+                  />
                 ))}
               </div>
 
               <aside className="card rider-resumen" aria-label="Resumen">
                 <h2>Resumen</h2>
                 <p className="fine">
-                  Se cobra un día por cada 24 horas entre la entrega y la recogida: el día adicional solo se cobra si la
-                  renta supera las 24 horas.
+                  Precios de referencia de cada compañía. Se cuenta un día por cada 24 horas entre la entrega y la recogida.
                 </p>
                 <dl className="cobro">
                   <div><dt>Alquiler de equipos ({dias} {dias === 1 ? "día" : "días"})</dt><dd>{pesos(suma("alquiler"))}</dd></div>
                   <div><dt>Entrega y recogida</dt><dd>{pesos(suma("transporte"))}</dd></div>
                   <div><dt>Técnicos</dt><dd>{pesos(suma("tecnico"))}</dd></div>
-                  <div><dt>Tarifa de servicio ({Math.round(SERVICIO * 100)} %)</dt><dd>{pesos(suma("servicio"))}</dd></div>
-                  <div><dt>Depósito reembolsable</dt><dd>{pesos(suma("deposito"))}</dd></div>
-                  <div className="total"><dt>Total</dt><dd>{pesos(suma("total"))}</dd></div>
+                  <div className="total"><dt>Total de referencia</dt><dd>{pesos(suma("alquiler") + suma("transporte") + suma("tecnico"))}</dd></div>
                 </dl>
+                <p className="fine">
+                  El valor final y la forma de pago los acuerdas directamente con cada compañía. ENRENTA no
+                  cobra comisión durante la BETA.
+                </p>
 
                 <div className="field">
-                  <span className="etiqueta">¿Necesitas una cotización formal antes de reservar?</span>
+                  <span className="etiqueta">¿Necesitas una cotización en PDF?</span>
                   <div className="row-actions">
                     {grupos.map((g) => (
                       <BotonPDF
@@ -285,10 +335,10 @@ export function RiderVista({
                             alquiler: g.cobro.alquiler,
                             transporte: g.cobro.transporte,
                             tecnico: g.cobro.tecnico,
-                            servicio: g.cobro.servicio,
-                            depositoPct: g.c.deposito_pct,
-                            deposito: g.cobro.deposito,
-                            total: g.cobro.total,
+                            servicio: 0,
+                            depositoPct: 0,
+                            deposito: 0,
+                            total: referencia(g),
                           },
                         }}
                       />
@@ -297,7 +347,7 @@ export function RiderVista({
                 </div>
 
                 <div className="field">
-                  <label htmlFor="rd-nota">Nota para las compañías</label>
+                  <label htmlFor="rd-nota">Nota para las compañías (va en el mensaje de WhatsApp)</label>
                   <textarea
                     id="rd-nota"
                     rows={2}
@@ -311,29 +361,18 @@ export function RiderVista({
                   />
                 </div>
 
-                {conSesion ? (
-                  <button type="button" className="btn primary lg block" onClick={enviar} disabled={enviando || faltan}>
-                    {enviando
-                      ? "Enviando…"
-                      : `Enviar ${grupos.length === 1 ? "la solicitud" : `${grupos.length} solicitudes`}`}
-                  </button>
-                ) : (
-                  <Link href="/necesito" className="btn primary lg block">Entra con tu correo para reservar</Link>
+                {grupos.some(falta) && (
+                  <p className="fine warn-txt">Ajusta las cantidades marcadas: no hay tantas unidades libres en tus fechas.</p>
                 )}
-                <p className="fine">
-                  {faltan
-                    ? "Ajusta las cantidades marcadas: no hay tantas unidades libres en tus fechas."
-                    : "Todavía no se cobra nada: el pago en garantía llega en un siguiente paso."}
-                </p>
 
                 <div className="como-funciona">
-                  <b>Cómo funciona una reserva</b>
+                  <b>Cómo funciona</b>
                   <ol>
-                    <li>Envías la solicitud y las unidades quedan apartadas mientras la compañía responde.</li>
-                    <li>La compañía acepta o rechaza. Si rechaza, las unidades se liberan.</li>
-                    <li>Entrega en el lugar (o retiro en bodega) con registro fotográfico.</li>
-                    <li>Al devolver, la compañía revisa el equipo y se te devuelve el depósito.</li>
+                    <li>Pides la cotización por WhatsApp: a la compañía le llega tu rider con fechas y lugar.</li>
+                    <li>Acuerdan directamente el precio final y la forma de pago.</li>
+                    <li>La compañía marca la solicitud como rentada y el equipo queda apartado para ti.</li>
                   </ol>
+                  <Link href="/como-funciona">Más sobre la BETA</Link>
                 </div>
               </aside>
             </div>
@@ -362,6 +401,7 @@ function TarjetaCompania({
   dias,
   libres,
   onFicha,
+  accion,
 }: {
   g: Grupo;
   pedido: Pedido;
@@ -369,6 +409,7 @@ function TarjetaCompania({
   dias: number;
   libres: (e: EquipoPublico) => number;
   onFicha: (e: EquipoPublico) => void;
+  accion: ReactNode; // botón "Cotizar por WhatsApp"
 }) {
   const { c, lineas, op, modalidad, cobro } = g;
   const lugar = pedido.lugar!;
@@ -383,7 +424,9 @@ function TarjetaCompania({
           <h2>{c.nombre}</h2>
           <span className="fine">
             {c.zona ?? c.ciudad} · a {textoKm(cobro.km)} del show ·{" "}
-            {c.verificada ? <span className="ok-txt">✓ Verificada</span> : "Nueva en ENRENTA"}
+            {c.verificada ? <span className="ok-txt">✓ Verificada</span> : "Nueva en ENRENTA"} ·{" "}
+            {textoResumen(c.resenas) ? <span className="estrellas-txt">{textoResumen(c.resenas)}</span> : "Sin reseñas aún"} ·{" "}
+            <Link href={`/compania/${c.id}`}>Perfil y reseñas</Link>
           </span>
         </div>
         <b className="rg-total">{pesos(cobro.alquiler + cobro.transporte + cobro.tecnico)}</b>
@@ -482,8 +525,9 @@ function TarjetaCompania({
       ) : null}
       <p className="fine">
         {fechaLarga(pedido.entrega)}, {pedido.entrega.split("T")[1]} → {fechaLarga(pedido.recogida)}, {pedido.recogida.split("T")[1]} ·{" "}
-        {dias} {dias === 1 ? "día cobrado" : "días cobrados"}
+        {dias} {dias === 1 ? "día" : "días"}
       </p>
+      <div className="rg-accion">{accion}</div>
     </section>
   );
 }

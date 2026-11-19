@@ -62,7 +62,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/reservas/[id
       <Link href={volver.href} className="back-link">
         ← {volver.texto}
       </Link>
-      <TarjetaReserva r={reserva} vista={lado} enlace={false} />
+      <TarjetaReserva r={reserva} vista={lado} />
       {datos && !datos.ok && <p className="form-err">{datos.mensaje}</p>}
       {flujo && (
         <>

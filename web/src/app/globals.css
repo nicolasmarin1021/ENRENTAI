@@ -1001,3 +1001,66 @@ a.foto { display: block; }
   .flow-strip .fine { display: none; }
   .dlg-hd, .dlg-body, .dlg-ft { padding-inline: 16px; }
 }
+
+/* ---------- BETA: conexión por WhatsApp ---------- */
+:root { --wa: #0E7C66; --wa-soft: #E3F4EF; }
+.beta {
+  display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; flex: none;
+  background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .08em;
+}
+.btn.whatsapp { color: var(--wa); box-shadow: inset 0 0 0 1px rgba(14, 124, 102, .45); }
+.btn.primary.whatsapp {
+  background: var(--wa); color: #fff; box-shadow: 0 10px 22px -10px rgba(14, 124, 102, .8), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+.btn.primary.whatsapp:hover:not(:disabled) { filter: brightness(1.06); box-shadow: 0 12px 24px -10px rgba(14, 124, 102, .9); }
+.rg-accion { display: flex; justify-content: flex-end; margin: 14px 18px 18px; }
+.rg-accion .btn { min-width: 220px; }
+.como-pagina .beta { margin-bottom: 8px; }
+.como-pagina .card { gap: 12px; }
+.pasos-como { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+.pasos-como li { padding-left: 4px; line-height: 1.5; }
+.site-foot a { color: var(--muted); }
+.site-foot a:hover { color: var(--ink); }
+@media (max-width: 700px) {
+  .rg-accion { margin-inline: 14px; }
+  .rg-accion .btn { width: 100%; }
+}
+/* encabezado en celulares: logo y distintivo BETA más compactos para que todo quepa en una línea */
+@media (max-width: 420px) {
+  .hdr-row { column-gap: 4px; }
+  .brand { gap: 4px; }
+  .brand-logo { height: 26px; }
+  .beta { padding: 2px 5px; font-size: 9px; letter-spacing: .04em; }
+  .role a { padding: 7px 7px; }
+}
+@media (max-width: 370px) {
+  .brand .beta { display: none; }
+}
+
+/* ---------- reseñas ---------- */
+:root { --estrella: #E89A0C; }
+.estrellas { color: var(--estrella); letter-spacing: 1px; white-space: nowrap; }
+.estrellas .vacias { color: var(--line-strong); }
+.estrellas-txt { color: var(--ink); font-weight: 600; }
+.mi-resena { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; }
+.calificar { flex-basis: 100%; padding: 12px 14px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.estrellas-input { display: flex; gap: 4px; }
+.estrellas-input label {
+  width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; cursor: pointer;
+  font-size: 28px; line-height: 1; color: var(--line-strong);
+}
+.estrellas-input label.on { color: var(--estrella); }
+.estrellas-input label:hover { background: var(--surface-2); }
+.estrellas-input label:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.resenas { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.resenas li { display: grid; gap: 6px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.resenas li:last-child { padding-bottom: 0; border-bottom: 0; }
+.resenas p { margin: 0; overflow-wrap: anywhere; }
+.resena-hd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.resena-hd b { font-size: 14.5px; }
+.respuesta { padding: 8px 12px; border-radius: 12px; background: var(--surface-2); font-size: 14px; }
+.perfil-equipos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.perfil-equipos li { display: flex; align-items: center; gap: 12px; padding: 10px; }
+.perfil-equipos img, .perfil-equipos .sin-foto { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; background: var(--surface-2); }
+.perfil-equipos b { font-size: 14.5px; }
+.resenas .link-btn { justify-self: start; }

@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ZONAS, pesos } from "@/lib/medellin";
 import { conPuntos, soloNumero } from "@/lib/moneda";
+import { normalizarWhatsApp, whatsappValido } from "@/lib/whatsapp";
 
 type Props = { uid: string; contacto: string; correo: string };
 
@@ -40,7 +41,8 @@ export function RegistroCompania({ uid, contacto, correo }: Props) {
   function validar() {
     if (f.nombre.trim().length < 2) return "Escribe el nombre de la compañía.";
     if (f.contacto.trim().length < 2) return "Escribe el nombre de la persona de contacto.";
-    if (f.telefono.replace(/\D/g, "").length < 7) return "Escribe un teléfono o WhatsApp de contacto.";
+    if (!whatsappValido(normalizarWhatsApp(f.telefono)))
+      return "Escribe el WhatsApp de la compañía (un celular de 10 dígitos, p. ej. 300 123 4567).";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.correo.trim())) return "Escribe un correo válido para la compañía.";
     if (f.direccion.trim().length < 6) return "Escribe la dirección exacta de la bodega.";
     if (!f.zona) return "Elige la zona donde está la bodega.";
@@ -96,6 +98,7 @@ export function RegistroCompania({ uid, contacto, correo }: Props) {
       compania_id: c.id,
       contacto: f.contacto.trim(),
       telefono: f.telefono.trim(),
+      whatsapp: normalizarWhatsApp(f.telefono),
       correo: f.correo.trim().toLowerCase(),
       nit: f.nit.trim() || null,
     });
@@ -126,8 +129,9 @@ export function RegistroCompania({ uid, contacto, correo }: Props) {
             <input id="rc-contacto" autoComplete="name" value={f.contacto} onChange={set("contacto")} />
           </div>
           <div className="field">
-            <label htmlFor="rc-tel">Teléfono o WhatsApp</label>
+            <label htmlFor="rc-tel">WhatsApp para cotizaciones</label>
             <input id="rc-tel" type="tel" autoComplete="tel" placeholder="300 123 4567" value={f.telefono} onChange={set("telefono")} />
+            <span className="hint">Aquí te escriben los clientes que piden una cotización.</span>
           </div>
           <div className="field">
             <label htmlFor="rc-correo">Correo de la compañía</label>
@@ -138,7 +142,9 @@ export function RegistroCompania({ uid, contacto, correo }: Props) {
             <input id="rc-nit" inputMode="numeric" placeholder="900.123.456-7" value={f.nit} onChange={set("nit")} />
           </div>
         </div>
-        <p className="fine">El teléfono, el correo y el NIT solo los ves tú y ENRENTA. Los clientes te escriben por el chat.</p>
+        <p className="fine">
+          Tu WhatsApp solo se le entrega al cliente que te pide una cotización. El correo y el NIT solo los ves tú y ENRENTA.
+        </p>
       </section>
 
       <section className="card">
@@ -175,7 +181,7 @@ export function RegistroCompania({ uid, contacto, correo }: Props) {
       </section>
 
       <section className="card">
-        <h2>Entregas y garantía</h2>
+        <h2>Entregas</h2>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="rc-cob">Entregas</label>
@@ -185,11 +191,6 @@ export function RegistroCompania({ uid, contacto, correo }: Props) {
               <option value="30">Entrego hasta 30 km</option>
               <option value="45">Entrego hasta 45 km</option>
             </select>
-          </div>
-          <div className="field">
-            <label htmlFor="rc-dep">Depósito reembolsable</label>
-            <input id="rc-dep" type="number" inputMode="numeric" min={0} max={100} step={1} value={f.deposito} onChange={set("deposito")} />
-            <span className="hint">% del valor de la renta. Se devuelve al cerrar la entrega sin novedades.</span>
           </div>
 
           {entrega && (

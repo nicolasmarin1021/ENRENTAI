@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { SELECT_RESERVA, type ReservaFila } from "@/components/tarjeta-reserva";
 import { PanelVista, type BloqueoPanel } from "@/components/tengo/panel-vista";
+import { SELECT_RESENA, type Resena } from "@/lib/resenas";
 import { getSesion } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,11 +41,13 @@ async function Contenido() {
 
   const supabase = await createClient();
   const cid = s.compania.id;
-  const [{ data: c }, resRes, { data: eqs }, bloqRes] = await Promise.all([
+  const [{ data: c }, resRes, { data: eqs }, bloqRes, { data: rs }] = await Promise.all([
     supabase.from("companias").select("*").eq("id", cid).single(),
     supabase.from("reservas").select(SELECT_RESERVA).eq("compania_id", cid).order("entrega"),
     supabase.from("equipos").select("id, unidades").eq("compania_id", cid),
     supabase.from("bloqueos").select("equipo_id, cantidad, desde, hasta"),
+    // Si las reseñas aún no existen en la base de datos (falta 0009), la lista queda vacía.
+    supabase.from("resenas").select(SELECT_RESENA).eq("compania_id", cid).order("creado", { ascending: false }).limit(20),
   ]);
   if (!c) return <p className="form-err">No pudimos cargar tu compañía. Recarga la página.</p>;
 
@@ -54,6 +57,7 @@ async function Contenido() {
       reservas={(resRes.data ?? []) as unknown as ReservaFila[]}
       equipos={(eqs ?? []) as { id: string; unidades: number }[]}
       bloqueos={(bloqRes.data ?? []) as BloqueoPanel[]}
+      resenas={(rs ?? []) as Resena[]}
     />
   );
 }
