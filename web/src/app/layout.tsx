@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
+import { AbrirAnuncio, AnuncioFull } from "@/components/anuncio-full";
 import { Logo } from "@/components/brand";
 import { SesionHdr } from "@/components/sesion-hdr";
 import "./globals.css";
@@ -37,8 +38,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </header>
         <main className="wrap site-main">{children}</main>
         <footer className="wrap site-foot">
-          ENRENTA BETA · Medellín, Colombia · <Link href="/como-funciona">Cómo funciona y condiciones de la BETA</Link>
+          ENRENTA BETA · Medellín, Colombia · <Link href="/como-funciona">Cómo funciona y condiciones de la BETA</Link> ·{" "}
+          <AbrirAnuncio />
         </footer>
+        {/* Anuncio de lo que trae ENRENTA completa: sale una vez al entrar. */}
+        <AnuncioFull />
       </body>
     </html>
   );

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AbrirAnuncio } from "@/components/anuncio-full";
+import { ListaNovedades } from "@/components/novedades";
 
 export const metadata: Metadata = {
   title: "Cómo funciona la BETA",
@@ -89,6 +91,17 @@ export default function ComoFunciona() {
           Estas condiciones son provisionales mientras dure la BETA. Los términos completos y la política de tratamiento de
           datos personales se publicarán antes del lanzamiento.
         </p>
+      </div>
+
+      <div className="card como-viene">
+        <span className="como-viene-pill">Próximamente</span>
+        <h2>Lo que viene en ENRENTA completa</h2>
+        <p className="muted">
+          La versión completa cuidará cada renta de principio a fin, con ENRENTA en el medio para que clientes y compañías
+          renten con tranquilidad.
+        </p>
+        <ListaNovedades className="en-pagina" />
+        <AbrirAnuncio texto="Ver el anuncio" />
       </div>
     </section>
   );
