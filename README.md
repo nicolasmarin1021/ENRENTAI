@@ -14,6 +14,8 @@ Marketplace para rentar equipos de audio y RF para shows, entre clientes ("Neces
 
 - `prototipo/` — el prototipo navegable (HTML) que define el diseño y los flujos. Es la referencia de cómo debe verse y comportarse la app.
 - `web/` — la app real (Next.js 16 + TypeScript).
+- `mobile/` — la app móvil de la BETA para iPhone y Android (Expo + TypeScript), con el mismo Supabase.
+  Cómo probarla en el celular: ver `mobile/README.md`.
 
 ## Cómo correr la app en tu computador
 
