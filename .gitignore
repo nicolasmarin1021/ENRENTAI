@@ -7,3 +7,6 @@ node_modules/
 .claude/
 .DS_Store
 Thumbs.db
+
+# Mapa del código de graphify (se genera en cada equipo)
+graphify-out/
