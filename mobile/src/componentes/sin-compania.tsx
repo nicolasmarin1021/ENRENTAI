@@ -17,7 +17,7 @@ export function ConCompania({ titulo, children }: { titulo: string; children: (c
           <Texto>
             {usuario
               ? "Con tu compañía registrada publicas tu inventario y recibes cotizaciones por WhatsApp. Gratis durante la BETA."
-              : "Entra con tu correo para registrar tu compañía, publicar tu inventario y recibir cotizaciones por WhatsApp."}
+              : "Entra o crea tu cuenta para registrar tu compañía, publicar tu inventario y recibir cotizaciones por WhatsApp."}
           </Texto>
           <Boton titulo={usuario ? "Registrar mi compañía" : "Entrar"} onPress={() => router.push(usuario ? "/registro" : "/entrar")} />
         </Tarjeta>

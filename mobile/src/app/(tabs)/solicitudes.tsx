@@ -52,7 +52,7 @@ export default function Solicitudes() {
       <Pantalla>
         <Encabezado titulo="Mis solicitudes" />
         <Tarjeta>
-          <Texto>Entra con tu correo para ver las cotizaciones que pediste por WhatsApp.</Texto>
+          <Texto>Entra o crea tu cuenta para ver las cotizaciones que pediste por WhatsApp.</Texto>
           <Boton titulo="Entrar" onPress={() => router.push("/entrar")} />
         </Tarjeta>
       </Pantalla>

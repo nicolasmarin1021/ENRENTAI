@@ -64,13 +64,25 @@ async function entrarConEnlace(url: string): Promise<string> {
 
 type Perfil = { uid: string; nombre: string; admin: boolean; compania: MiCompania | null };
 
-async function leerPerfil(uid: string): Promise<Perfil> {
+// Lee el perfil y, la primera vez, guarda en él el nombre y el celular que la persona escribió al
+// crear la cuenta (llegan en los metadatos del registro).
+async function leerPerfil(uid: string, meta?: Record<string, unknown>): Promise<Perfil> {
   const [{ data: p }, { data: c }] = await Promise.all([
-    supabase.from("perfiles").select("nombre, es_admin").eq("id", uid).maybeSingle(),
+    supabase.from("perfiles").select("nombre, telefono, es_admin").eq("id", uid).maybeSingle(),
     supabase.from("companias").select("id, nombre, verificada").eq("duenio", uid).order("creado").limit(1).maybeSingle(),
   ]);
-  const fila = p as { nombre: string | null; es_admin: boolean | null } | null;
-  return { uid, nombre: fila?.nombre ?? "", admin: fila?.es_admin === true, compania: (c as MiCompania | null) ?? null };
+  const fila = p as { nombre: string | null; telefono: string | null; es_admin: boolean | null } | null;
+  let nombre = fila?.nombre ?? "";
+  const metaNombre = typeof meta?.nombre === "string" ? meta.nombre.trim().slice(0, 120) : "";
+  const metaTelefono = typeof meta?.telefono === "string" ? meta.telefono.trim().slice(0, 20) : "";
+  const cambios: { nombre?: string; telefono?: string } = {};
+  if (fila && !nombre && metaNombre) cambios.nombre = metaNombre;
+  if (fila && !fila.telefono && metaTelefono) cambios.telefono = metaTelefono;
+  if (cambios.nombre || cambios.telefono) {
+    const { error } = await supabase.from("perfiles").update(cambios).eq("id", uid);
+    if (!error && cambios.nombre) nombre = cambios.nombre;
+  }
+  return { uid, nombre, admin: fila?.es_admin === true, compania: (c as MiCompania | null) ?? null };
 }
 
 export function SesionProvider({ children }: { children: ReactNode }) {
@@ -126,13 +138,13 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   // los de otra cuenta después de salir y entrar con otra).
   const recargarPerfil = useCallback(async () => {
     if (!user) return;
-    setPerfil(await leerPerfil(user.id));
+    setPerfil(await leerPerfil(user.id, user.user_metadata));
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
     let vivo = true;
-    void leerPerfil(user.id).then((p) => {
+    void leerPerfil(user.id, user.user_metadata).then((p) => {
       if (vivo) setPerfil(p);
     });
     return () => {

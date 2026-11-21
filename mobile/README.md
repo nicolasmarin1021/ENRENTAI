@@ -31,21 +31,23 @@ La agenda por días y los bloqueos de unidades siguen, por ahora, solo en la web
 
 La app lee la URL y la publishable key de Supabase de `web/.env.local` (ver `app.config.ts`); no hay que copiarlas.
 
-### Entrar con tu correo desde el celular
+### Crear cuenta y entrar
 
-El correo de Supabase trae un enlace. Para que ese enlace abra la app, en Supabase ve a
-**Authentication → URL Configuration → Redirect URLs** y agrega (una sola vez):
+Se entra con **correo y contraseña**. «Crear cuenta» pide nombre completo, celular, correo y la contraseña
+dos veces; Supabase envía automáticamente un correo para confirmarlo. En Supabase revisa (una sola vez):
 
-- `exp://**` (para Expo Go mientras desarrollamos)
-- `enrenta://**` (para la app instalada)
+- **Authentication → Sign In / Providers → Email**: «Confirm email» encendido (así llega el correo de confirmación).
+- **Authentication → URL Configuration → Redirect URLs**: agrega `exp://**` (Expo Go mientras desarrollamos)
+  y `enrenta://**` (la app instalada), para que el enlace del correo abra la app.
 
-Luego abre el correo **en el iPhone** y toca el enlace: se abre la app y entras sola. Mientras desarrollamos
-también aparece «Usar la cuenta de prueba» (correo y contraseña de la cuenta de prueba).
+Si el correo se abre **en el iPhone**, el enlace abre la app y entras sola; si se abre en otro dispositivo, la
+cuenta igual queda confirmada y se entra con la contraseña. Las cuentas creadas antes, sin contraseña, pueden
+entrar con «¿Tu cuenta no tiene contraseña? Entra con un enlace».
 
 ## Estructura
 
 - `src/app/` — las pantallas (cada archivo es una ruta de Expo Router).
-  - `(tabs)/` — las pestañas de abajo: `explorar`, `rider`, `solicitudes` (cliente) · `panel`, `inventario`,
+  - `(tabs)/` — las pestañas de abajo: `buscar` (Buscar equipos y Explorar), `guardados`, `rider`, `solicitudes` (cliente) · `panel`, `inventario`,
     `tarifas` (compañía) · `cuenta`.
   - `compania/[id]`, `equipo/[id]`, `equipo-editar/[id]`, `entrar`, `registro`, `como-funciona` — pantallas que
     se abren encima.

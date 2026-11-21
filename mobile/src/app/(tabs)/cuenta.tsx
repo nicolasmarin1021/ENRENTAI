@@ -79,7 +79,7 @@ export default function Cuenta() {
         </Pressable>
       ) : (
         <Tarjeta>
-          <Texto>Entra con tu correo para pedir cotizaciones, ver tus solicitudes o publicar los equipos de tu compañía.</Texto>
+          <Texto>Entra o crea tu cuenta para pedir cotizaciones, ver tus solicitudes o publicar los equipos de tu compañía.</Texto>
           <Boton titulo="Entrar" onPress={() => router.push("/entrar")} />
         </Tarjeta>
       )}

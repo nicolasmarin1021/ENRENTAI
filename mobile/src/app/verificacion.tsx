@@ -56,7 +56,7 @@ export default function Verificacion() {
   if (!usuario) {
     return (
       <View style={{ flex: 1, padding: margen, gap: 12, backgroundColor: color.fondo }}>
-        <Texto>Entra con tu correo para verificar tu identidad.</Texto>
+        <Texto>Entra o crea tu cuenta para verificar tu identidad.</Texto>
         <Boton titulo="Entrar" onPress={() => router.replace("/entrar")} />
       </View>
     );

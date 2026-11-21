@@ -42,7 +42,7 @@ export default function Perfil() {
   if (!usuario) {
     return (
       <View style={{ flex: 1, padding: margen, gap: 12, backgroundColor: color.fondo }}>
-        <Texto>Entra con tu correo para completar tu perfil.</Texto>
+        <Texto>Entra o crea tu cuenta para completar tu perfil.</Texto>
         <Boton titulo="Entrar" onPress={() => router.replace("/entrar")} />
       </View>
     );
