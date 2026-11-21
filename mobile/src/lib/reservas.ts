@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { aISO } from "./formato";
+import { aISO, leerLocal } from "./formato";
 import { supabase, supabaseConfigurado } from "./supabase";
 
 // Solicitudes (tabla "reservas"): en la BETA el cliente pide cotización por WhatsApp y la
@@ -55,7 +55,8 @@ export const esActiva = (r: ReservaFila, ahora: number) => ACTIVAS.includes(r.es
 // Unidades ya apartadas por otras reservas en las fechas del pedido, por equipo.
 // Si la función aún no existe en la base de datos, se asume que todo está libre.
 export function useOcupadas(entrega: string, recogida: string, version = 0) {
-  const clave = entrega && recogida ? `${entrega}|${recogida}|${version}` : "";
+  // Solo con fechas válidas (un pedido guardado con fechas dañadas no debe cerrar la app).
+  const clave = leerLocal(entrega) && leerLocal(recogida) ? `${entrega}|${recogida}|${version}` : "";
   const [estado, setEstado] = useState<{ clave: string; mapa: Record<string, number> }>({ clave: "", mapa: {} });
 
   useEffect(() => {

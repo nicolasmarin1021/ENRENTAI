@@ -41,9 +41,11 @@ Luego abre http://localhost:3000.
    `0009_beta_resenas.sql` (reseñas de los clientes y respuesta de las compañías),
    `0010_perfil_cliente.sql` (perfil del cliente: foto, a qué se dedica, dónde trabaja y descripción, que ve la
    compañía en cada solicitud), `0011_calificar_clientes.sql` (las compañías califican a quien les rentó y
-   reportan problemas con el equipo; el cliente puede responder) y `0012_verificacion_identidad.sql`
+   reportan problemas con el equipo; el cliente puede responder), `0012_verificacion_identidad.sql`
    (verificación de identidad opcional con revisión manual de un admin: cédula y selfie del cliente; NIT,
-   RUT o Cámara de Comercio de la compañía; las fotos van a un bucket privado y se borran al revisarlas).
+   RUT o Cámara de Comercio de la compañía; las fotos van a un bucket privado y se borran al revisarlas) y
+   `0013_refuerzos_seguridad.sql` (el nombre verificado no se cambia desde la app y hay un límite de
+   solicitudes de cotización por cliente).
    Para revisar verificaciones, tu cuenta debe tener `es_admin = true` en la tabla `perfiles`.
 4. En **Authentication → URL Configuration**, pon `http://localhost:3000` como *Site URL* y agrega `http://localhost:3000/**` en *Redirect URLs*.
 5. Reinicia `npm run dev` para que tome las variables nuevas (en Windows PowerShell usa `npm.cmd run dev`).

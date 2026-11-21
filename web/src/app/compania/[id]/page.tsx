@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { Corazon } from "@/components/corazon";
 import { Estrellas, ListaResenas } from "@/components/resenas";
 import { urlFoto } from "@/lib/catalogo";
 import { pesos } from "@/lib/medellin";
@@ -83,6 +84,7 @@ async function Contenido({ params }: Pick<PageProps<"/compania/[id]">, "params">
           </p>
         </div>
         <div className="row-actions">
+          <Corazon tipo="companias" id={c.id} nombre={c.nombre} />
           <Link href="/explorar" className="btn primary">
             Cotizar en Explorar
           </Link>
@@ -109,6 +111,7 @@ async function Contenido({ params }: Pick<PageProps<"/compania/[id]">, "params">
                       {pesos(e.precio_dia)} por día · {e.unidades} {e.unidades === 1 ? "unidad" : "unidades"}
                     </span>
                   </span>
+                  <Corazon tipo="equipos" id={e.id} nombre={e.nombre} plano />
                 </li>
               );
             })}

@@ -7,7 +7,9 @@ import { createClient } from "./supabase/client";
 // Unidades ya apartadas por otras reservas en las fechas del pedido, por equipo.
 // Si la función aún no existe en la base de datos, se asume que todo está libre.
 export function useOcupadas(entrega: string, recogida: string, version = 0) {
-  const clave = entrega && recogida ? `${entrega}|${recogida}|${version}` : "";
+  // Solo con fechas válidas: una fecha dañada no debe romper la página.
+  const valida = (s: string) => Boolean(s) && !Number.isNaN(+new Date(s));
+  const clave = valida(entrega) && valida(recogida) ? `${entrega}|${recogida}|${version}` : "";
   const [estado, setEstado] = useState<{ clave: string; mapa: Record<string, number> }>({ clave: "", mapa: {} });
 
   useEffect(() => {

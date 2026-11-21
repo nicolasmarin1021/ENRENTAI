@@ -90,7 +90,8 @@ async function leerCatalogo(): Promise<Catalogo> {
           "equipos(id, nombre, categoria_id, incluye, unidades, precio_dia, dimensiones, peso_kg, estado, banda_nombre, banda_min_mhz, banda_max_mhz, equipo_fotos(ruta, orden))",
       )
       .not("lat", "is", null)
-      .not("lng", "is", null),
+      .not("lng", "is", null)
+      .eq("equipos.activo", true),
     supabase.from("lugares").select("id, nombre, direccion, lat, lng").eq("publico", true).order("nombre"),
     supabase.from("resumen_resenas").select("compania_id, promedio, total"),
     supabase.from("categorias").select("id, nombre").order("orden"),

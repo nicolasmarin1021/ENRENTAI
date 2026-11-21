@@ -209,7 +209,8 @@ export function FormEquipo({ companiaId, categorias, equipo }: Props) {
     if (!equipo) return;
     setEstadoGuardado("Eliminando…");
     const rutas = [...equipo.fotos.map((x) => x.ruta)];
-    if (rutas.length) await supabase.storage.from("equipos").remove(rutas);
+    // Primero el equipo: si no se puede eliminar (por ejemplo, porque tiene solicitudes), sus fotos
+    // se quedan intactas.
     const { error: e } = await supabase.from("equipos").delete().eq("id", equipo.id);
     if (e) {
       setEstadoGuardado("");
@@ -217,6 +218,7 @@ export function FormEquipo({ companiaId, categorias, equipo }: Props) {
       setError("No pudimos eliminar el equipo. Si ya tiene reservas, mejor páusalo.");
       return;
     }
+    if (rutas.length) await supabase.storage.from("equipos").remove(rutas);
     router.push("/tengo/inventario");
     router.refresh();
   }

@@ -240,10 +240,15 @@ export default function EditarEquipo() {
     preguntar("¿Eliminar este equipo?", "Se borra con sus fotos. Esto no se puede deshacer.", "Eliminar", async () => {
       setEstado("Eliminando…");
       const rutas = fotos.filter((x) => x.tipo === "guardada").map((x) => (x as { ruta: string }).ruta).concat(quitadas.map((q) => q.ruta));
-      if (rutas.length) await supabase.storage.from("equipos").remove(rutas);
+      // Primero el equipo: si no se puede eliminar (por ejemplo, porque tiene solicitudes), sus fotos
+      // se quedan intactas.
       const { error: e } = await supabase.from("equipos").delete().eq("id", id!);
+      if (e) {
+        setEstado("");
+        return setError("No pudimos eliminarlo. Si tiene solicitudes, ponlo en pausa en lugar de eliminarlo.");
+      }
+      if (rutas.length) await supabase.storage.from("equipos").remove(rutas);
       setEstado("");
-      if (e) return setError("No pudimos eliminarlo. Si tiene solicitudes, ponlo en pausa en lugar de eliminarlo.");
       void recargar();
       router.back();
     });

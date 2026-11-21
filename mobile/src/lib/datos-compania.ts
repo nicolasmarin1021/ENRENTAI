@@ -35,8 +35,9 @@ export function useDatosCompania(cid: string) {
   const [error, setError] = useState("");
   const [ahora, setAhora] = useState(() => Date.now());
 
-  const recargar = useCallback(async () => {
-    setCargando(true);
+  // silencioso: al volver a la pestaña se actualiza sin mostrar la ruedita de recarga.
+  const recargar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCargando(true);
     const [eq, rs, bq, re] = await Promise.all([
       supabase
         .from("equipos")
@@ -65,7 +66,7 @@ export function useDatosCompania(cid: string) {
 
   useFocusEffect(
     useCallback(() => {
-      void recargar();
+      void recargar(true);
     }, [recargar]),
   );
 

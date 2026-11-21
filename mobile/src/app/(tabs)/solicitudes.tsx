@@ -16,12 +16,13 @@ export default function Solicitudes() {
   const [ver, setVer] = useState<"activas" | "historial">("activas");
   const [ahora, setAhora] = useState(() => Date.now());
 
-  const cargar = useCallback(async () => {
+  // silencioso: al volver a la pestaña se actualiza sin mostrar la ruedita de recarga.
+  const cargar = useCallback(async (silencioso = false) => {
     if (!usuario) {
       setCargando(false);
       return;
     }
-    setCargando(true);
+    if (!silencioso) setCargando(true);
     const { data, error: e } = await supabase.from("reservas").select(SELECT_RESERVA).eq("cliente", usuario.id).order("entrega");
     if (e) {
       setError("No pudimos cargar tus solicitudes. Desliza hacia abajo para intentar de nuevo.");
@@ -43,7 +44,7 @@ export default function Solicitudes() {
   // Se recarga cada vez que la persona entra a esta pestaña.
   useFocusEffect(
     useCallback(() => {
-      void cargar();
+      void cargar(true);
     }, [cargar]),
   );
 

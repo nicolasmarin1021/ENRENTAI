@@ -32,6 +32,29 @@ export const PEDIDO_VACIO: Pedido = {
   nota: "",
 };
 
+// Lo que se lee del celular se revisa campo por campo: si algo quedó dañado (o es de una versión
+// anterior), se descarta esa parte en lugar de cerrar la app.
+const texto = (v: unknown) => (typeof v === "string" ? v : "");
+function pedidoGuardado(crudo: string): Pedido {
+  const x = JSON.parse(crudo) as Partial<Record<keyof Pedido, unknown>> | null;
+  if (!x || typeof x !== "object") return PEDIDO_VACIO;
+  const lugar = x.lugar as LugarPedido | null;
+  return {
+    necesidades: Array.isArray(x.necesidades)
+      ? (x.necesidades as Necesidad[]).filter((n) => n && typeof n.id === "string" && typeof n.texto === "string")
+      : [],
+    entrega: texto(x.entrega),
+    recogida: texto(x.recogida),
+    lugar: lugar && typeof lugar === "object" && Number.isFinite(lugar.lat) && Number.isFinite(lugar.lng) && typeof lugar.nombre === "string" ? lugar : null,
+    listo: x.listo === true,
+    rider: Array.isArray(x.rider)
+      ? (x.rider as ItemRider[]).filter((i) => i && typeof i.equipo_id === "string" && typeof i.compania_id === "string" && Number(i.cantidad) > 0)
+      : [],
+    opciones: x.opciones && typeof x.opciones === "object" && !Array.isArray(x.opciones) ? (x.opciones as Pedido["opciones"]) : {},
+    nota: texto(x.nota),
+  };
+}
+
 // Fechas sugeridas la primera vez: mañana 14:00 → pasado mañana 12:00.
 export const fechasSugeridas = () => ({ entrega: fechaLocal(1, 14), recogida: fechaLocal(2, 12) });
 
@@ -78,7 +101,7 @@ export function PedidoProvider({ children }: { children: ReactNode }) {
     AsyncStorage.getItem(CLAVE)
       .then((crudo) => {
         if (!crudo) return;
-        const leido = { ...PEDIDO_VACIO, ...(JSON.parse(crudo) as Partial<Pedido>) };
+        const leido = pedidoGuardado(crudo);
         actual.current = leido;
         setPedido(leido);
       })

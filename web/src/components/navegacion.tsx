@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useGuardados } from "@/lib/guardados";
 import { usePedido } from "@/lib/pedido";
 import { BotonSalir } from "./entrar";
 
@@ -36,6 +37,7 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
   const de = useSearchParams().get("de");
   const modo = modoDe(ruta, de);
   const [pedido] = usePedido();
+  const { total: guardados } = useGuardados();
   const enRider = pedido.rider.reduce((a, i) => a + i.cantidad, 0);
   const c = datos.conteos;
 
@@ -51,8 +53,10 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
   }, []);
 
   // BETA: la conversación y el pago van por WhatsApp, así que no hay chat, entregas, pagos ni liquidaciones.
+  // Las mismas pestañas de la app: Buscar equipos (con su subpanel Explorar), Guardados, Rider y Mis solicitudes.
   const cliente: Pestana[] = [
-    { href: "/explorar", texto: "Explorar", activa: (r) => r === "/explorar" || r === "/necesito" },
+    { href: "/explorar", texto: "Buscar equipos", activa: (r) => r === "/explorar" || r === "/necesito" },
+    { href: "/guardados", texto: "Guardados", cuenta: guardados, activa: (r) => r === "/guardados" },
     { href: "/explorar/rider", texto: "Rider", cuenta: enRider, caliente: enRider > 0, activa: (r) => r === "/explorar/rider" },
     { href: "/necesito/reservas", texto: "Mis solicitudes", cuenta: c.misReservas, activa: (r) => empieza(r, "/necesito/reservas") },
   ];
@@ -138,13 +142,17 @@ function Cuenta({ datos, modo }: { datos: DatosNav; modo: "cliente" | "compania"
         { href: "/tengo/panel", texto: "Panel" },
         { href: "/tengo/inventario", texto: "Inventario y agenda" },
         { href: "/tengo/tarifas", texto: "Tarifas y WhatsApp" },
+        { href: "/tengo/verificacion", texto: "Verificar mi compañía" },
         { href: "/como-funciona", texto: "Cómo funciona la BETA" },
       ]
     : [
         { href: "/necesito/reservas", texto: "Mis solicitudes" },
+        { href: "/guardados", texto: "Guardados" },
         { href: "/explorar/rider", texto: "Mi rider" },
+        { href: "/necesito/verificacion", texto: "Verificar mi identidad" },
         { href: "/como-funciona", texto: "Cómo funciona la BETA" },
       ];
+  if (datos.admin) enlaces.push({ href: "/admin/verificaciones", texto: "Revisar verificaciones (admin)" });
 
   return (
     <div className="acct" ref={caja}>

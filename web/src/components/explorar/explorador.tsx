@@ -4,7 +4,9 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { Categoria } from "@/lib/catalogo";
 import type { Catalogo } from "@/lib/catalogo-publico";
+import { Subpaneles } from "@/components/subpaneles";
 import { usePedido } from "@/lib/pedido";
+import { ExplorarEquipos } from "./explorar-equipos";
 import { PasoCuando, PasoDonde, PasoQue, fechasSugeridas } from "./pasos";
 import { VistaMapa } from "./vista-mapa";
 
@@ -15,7 +17,9 @@ const PASOS = [
   { n: 3, texto: "Dónde" },
 ] as const;
 
-// Modo "Necesito equipos": primero el pedido guiado, después el mapa.
+// Modo "Necesito equipos", con dos subpaneles arriba (igual que en la app):
+// - Buscar equipos: primero el pedido guiado, después el mapa con las compañías que lo tienen.
+// - Explorar (/explorar?vista=explorar): todos los equipos publicados, en lista o en el mapa.
 export function Explorador({
   catalogo,
   categorias,
@@ -26,8 +30,9 @@ export function Explorador({
   conSesion: boolean;
 }) {
   const [pedido, guardar] = usePedido();
+  const params = useSearchParams();
   // /explorar?paso=3 abre directamente ese paso (lo usa el rider para "Otro lugar").
-  const pasoUrl = Number(useSearchParams().get("paso"));
+  const pasoUrl = Number(params.get("paso"));
   const [pasoElegido, setPaso] = useState<Paso | null>(() =>
     pasoUrl === 1 || pasoUrl === 2 || pasoUrl === 3 ? pasoUrl : null,
   );
@@ -39,6 +44,8 @@ export function Explorador({
     setPaso(p);
     window.scrollTo({ top: 0 });
   };
+
+  if (params.get("vista") === "explorar") return <ExplorarEquipos catalogo={catalogo} categorias={categorias} />;
 
   if (paso === "mapa" && completo) {
     return (
@@ -56,6 +63,7 @@ export function Explorador({
   const actual = paso === "mapa" ? 1 : paso;
   return (
     <div className="wz">
+      <Subpaneles vista="buscar" />
       <div className="wz-top">
         <ol className="pasos" aria-label="Pasos del pedido">
           {PASOS.map((p) => (

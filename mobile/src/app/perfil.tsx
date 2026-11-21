@@ -10,7 +10,7 @@ import { Avatar, TarjetaPerfil } from "@/componentes/perfil-cliente";
 import { prepararFoto } from "@/lib/fotos";
 import { completitud, leerMiPerfil, MAX_DESCRIPCION, OCUPACIONES, type PerfilCliente } from "@/lib/perfil";
 import { useSesion } from "@/lib/sesion";
-import { supabase } from "@/lib/supabase";
+import { mensajeError, supabase } from "@/lib/supabase";
 import { miVerificacion, type MiVerificacion } from "@/lib/verificacion";
 import { Aviso, Boton, Campo, Cargando, Chip, Tarjeta, Texto } from "@/ui/base";
 import { Icono } from "@/ui/iconos";
@@ -32,11 +32,18 @@ export default function Perfil() {
 
   useEffect(() => {
     if (!usuario) return;
+    let vivo = true;
     void leerMiPerfil(usuario.id).then((r) => {
+      if (!vivo) return;
       setP(r.perfil);
       setFaltaSql(r.faltaSql);
     });
-    void miVerificacion(usuario.id, "cliente").then(setVerif);
+    void miVerificacion(usuario.id, "cliente").then((r) => {
+      if (vivo) setVerif(r);
+    });
+    return () => {
+      vivo = false;
+    };
   }, [usuario]);
 
   if (!usuario) {
@@ -48,6 +55,7 @@ export default function Perfil() {
     );
   }
   if (!p) return <Cargando texto="Cargando tu perfil…" />;
+  const verificado = verif?.verificado ?? false;
 
   const cambiar = (c: Partial<PerfilCliente>) => {
     setP((x) => (x ? { ...x, ...c } : x));
@@ -90,13 +98,13 @@ export default function Perfil() {
         setGuardando(false);
         return setError(faltaSql ? "Falta ejecutar el SQL 0010_perfil_cliente.sql en Supabase." : "No pudimos subir tu foto. Intenta de nuevo.");
       }
-      if (p.foto) await supabase.storage.from("avatares").remove([p.foto]);
       foto = ruta;
     }
     const { error: e2 } = await supabase
       .from("perfiles")
       .update({
-        nombre: nombre.slice(0, 120),
+        // Con la identidad verificada, el nombre es el de la cédula y no se cambia desde aquí.
+        ...(verificado ? {} : { nombre: nombre.slice(0, 120) }),
         ocupacion: p.ocupacion,
         empresa: p.empresa?.trim() || null,
         descripcion: p.descripcion?.trim() || null,
@@ -105,15 +113,20 @@ export default function Perfil() {
         foto,
       })
       .eq("id", usuario.id);
-    setGuardando(false);
     if (e2) {
+      // La foto nueva no quedó en el perfil: se borra para no dejarla suelta.
+      if (foto && foto !== p.foto) await supabase.storage.from("avatares").remove([foto]);
+      setGuardando(false);
       return setError(
         e2.code === "42703" || e2.code === "PGRST204"
           ? "Falta ejecutar el SQL 0010_perfil_cliente.sql en Supabase para guardar el perfil completo."
-          : "No pudimos guardar tu perfil. Revisa tu conexión e intenta de nuevo.",
+          : mensajeError(e2, "No pudimos guardar tu perfil. Revisa tu conexión e intenta de nuevo."),
       );
     }
-    setP({ ...p, nombre, foto });
+    // La foto anterior se borra solo cuando el perfil ya apunta a la nueva.
+    if (p.foto && foto !== p.foto) await supabase.storage.from("avatares").remove([p.foto]);
+    setGuardando(false);
+    setP({ ...p, nombre: verificado ? p.nombre : nombre, foto });
     setFotoNueva(null);
     setListo(true);
     void recargarPerfil();
@@ -189,7 +202,14 @@ export default function Perfil() {
         </Tarjeta>
 
         <Tarjeta>
-          <Campo etiqueta="Tu nombre" value={p.nombre} onChangeText={(v) => cambiar({ nombre: v })} autoComplete="name" />
+          <Campo
+            etiqueta="Tu nombre"
+            value={p.nombre}
+            onChangeText={(v) => cambiar({ nombre: v })}
+            autoComplete="name"
+            editable={!verificado}
+            ayuda={verificado ? "Verificado con tu cédula. Si necesitas corregirlo, escríbenos." : undefined}
+          />
           <Texto peso={500} style={{ fontSize: 14 }}>
             ¿A qué te dedicas?
           </Texto>

@@ -47,10 +47,12 @@ export function TarjetaReserva({
   r,
   vista,
   resena = null,
+  identidadVerificada = false,
 }: {
   r: ReservaFila;
   vista: "cliente" | "compania";
   resena?: { estrellas: number; comentario: string | null } | null; // la reseña del cliente, si ya calificó
+  identidadVerificada?: boolean; // un admin revisó la cédula de quien pidió (SQL 0012)
 }) {
   const est = ESTADOS_RESERVA[r.estado] ?? { texto: r.estado, tono: "" };
   const referencia = r.alquiler + r.transporte + r.tecnico;
@@ -79,6 +81,7 @@ export function TarjetaReserva({
             <>
               <span className="lbl">Cliente</span>
               <b>{r.cliente_nombre || "Cliente"}</b>
+              {identidadVerificada && <span className="ok-txt fine">✓ Identidad verificada</span>}
               {r.distancia_km !== null && <span className="fine">a {km(r.distancia_km)} de tu bodega</span>}
             </>
           ) : (

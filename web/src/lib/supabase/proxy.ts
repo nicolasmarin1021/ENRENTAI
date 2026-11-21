@@ -8,6 +8,7 @@ const CON_CUENTA: [string, string][] = [
   ["/tengo", "/tengo"],
   ["/necesito", "/necesito"],
   ["/reservas", "/necesito"],
+  ["/admin", "/necesito"],
 ];
 
 // Renueva la sesión de Supabase en cada petición y devuelve las cookies actualizadas.

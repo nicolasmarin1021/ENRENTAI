@@ -3,8 +3,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Corazon } from "@/components/corazon";
 import { IconoCategoria } from "@/components/iconos";
 import { Mapa, type Marcador } from "@/components/mapa";
+import { Subpaneles } from "@/components/subpaneles";
 import { equiposPara } from "@/lib/busqueda";
 import { nombreEstado, urlFoto, type Categoria } from "@/lib/catalogo";
 import type { Catalogo, CompaniaPublica, EquipoPublico } from "@/lib/catalogo-publico";
@@ -187,6 +189,7 @@ export function VistaMapa({
       />
 
       <section className="float search-float" aria-label="Tu pedido">
+        <Subpaneles vista="buscar" />
         <div className="of-hd">
           <div className="of-txt">
             <span className="lbl">Tu pedido en Medellín</span>
@@ -365,6 +368,7 @@ function VentanaCompania({
             </Link>
           </span>
         </div>
+        <Corazon tipo="companias" id={c.id} nombre={c.nombre} plano />
         <button type="button" className="cerrar" onClick={onCerrar} aria-label="Cerrar">
           ×
         </button>
@@ -532,6 +536,7 @@ export function FichaEquipo({
   dias,
   rider,
   nombreCat,
+  conFechas = true,
   onCerrar,
 }: {
   e: EquipoPublico;
@@ -539,6 +544,7 @@ export function FichaEquipo({
   dias: number;
   rider: Rider;
   nombreCat: (id: string) => string;
+  conFechas?: boolean; // desde Explorar se puede mirar sin haber elegido fechas
   onCerrar: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -567,6 +573,7 @@ export function FichaEquipo({
             </span>
             <h2 id="ficha-titulo">{e.nombre}</h2>
           </div>
+          <Corazon tipo="equipos" id={e.id} nombre={e.nombre} plano className="ficha-corazon" />
           <button type="button" className="cerrar" onClick={() => ref.current?.close()} aria-label="Cerrar">
             ×
           </button>
@@ -594,7 +601,7 @@ export function FichaEquipo({
             <span className="tag">{nombreEstado(e.estado)}</span>
             {e.banda_nombre && <span className="tag">Banda {e.banda_nombre}</span>}
             <span className="tag">
-              {libres} de {e.unidades} libres en tus fechas
+              {conFechas ? `${libres} de ${e.unidades} libres en tus fechas` : `${e.unidades} ${e.unidades === 1 ? "unidad" : "unidades"}`}
             </span>
           </div>
           {enRider > 0 ? (

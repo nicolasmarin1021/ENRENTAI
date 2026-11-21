@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSesion } from "@/lib/sesion";
+import { esperarEnlaceDelCorreo, useSesion } from "@/lib/sesion";
 import { supabase } from "@/lib/supabase";
 import { Aviso, Boton, Campo, Texto } from "@/ui/base";
 import { Icono } from "@/ui/iconos";
@@ -134,6 +134,7 @@ export default function Entrar() {
     if (clave !== clave2) return setError("Las contraseñas no coinciden.");
     setOcupado(true);
     setError("");
+    esperarEnlaceDelCorreo();
     const { data, error: e } = await supabase.auth.signUp({
       email,
       password: clave,
@@ -174,6 +175,7 @@ export default function Entrar() {
     setOcupado(true);
     setError("");
     setAviso("");
+    esperarEnlaceDelCorreo();
     const { error: e } = await supabase.auth.resend({ type: "signup", email: correo, options: { emailRedirectTo: enlaceApp } });
     setOcupado(false);
     if (e) return setError(mensajeError(e));
@@ -188,6 +190,7 @@ export default function Entrar() {
     setOcupado(true);
     setError("");
     setAviso("");
+    esperarEnlaceDelCorreo();
     const { error: e } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: enlaceApp } });
     setOcupado(false);
     if (e) {

@@ -19,8 +19,7 @@ El modelo completo (pagos, depósitos) está guardado en la rama `modelo-full` y
     Compañía: `panel`, `inventario`, `tarifas`. Siempre: `cuenta`. Selector Necesito | Tengo arriba a la derecha.
   - UI propia en `src/ui/base.tsx` (Texto, Boton, Campo, Chip, Aviso, Tarjeta, Pantalla…), colores en `src/tema.ts`.
   - Datos en `src/lib/` (catalogo, pedido, sesion, perfil, calificaciones, verificacion…). Fechas a mano (Colombia, UTC−5).
-- `supabase/migrations/` — SQL 0001 a 0012. La dueña los ejecuta en el SQL Editor de Supabase (0012, verificación
-  de identidad, puede estar pendiente). Si falta un SQL, la app muestra «Falta ejecutar el SQL 00XX…».
+- `supabase/migrations/` — SQL 0001 a 0013 (todos ya ejecutados). La dueña los ejecuta en el SQL Editor de Supabase. Si falta un SQL, la app muestra «Falta ejecutar el SQL 00XX…».
 
 ## Comandos (Windows)
 - PowerShell bloquea `npm.ps1`: usar `npm.cmd` / `npx.cmd`. En Bash: `export PATH="/c/Program Files/nodejs:$PATH"`.
@@ -35,7 +34,9 @@ El modelo completo (pagos, depósitos) está guardado en la rama `modelo-full` y
   por correo). La web sigue con código al correo.
 - La ubicación de cada compañía (pin en Tarifas) es la misma del mapa de Buscar equipos y Explorar.
 - En el mapa no se muestran precios sino referencias de equipo (exacto o «≈» equivalente).
-- La web todavía no muestra el perfil del cliente, sus calificaciones ni las insignias de verificación.
+- La web ya tiene, como la app: subpaneles Buscar equipos | Explorar (`/explorar?vista=explorar`, lista o mapa),
+  Guardados (♡, en el navegador, `/guardados`) y la verificación de identidad (`/necesito/verificacion`,
+  `/tengo/verificacion`, revisión en `/admin/verificaciones`). Todavía no muestra el perfil del cliente ni sus calificaciones.
 
 ## graphify
 

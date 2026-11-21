@@ -65,7 +65,20 @@ function suscribir(aviso: () => void) {
 function interpretar(crudo: string | null): Pedido {
   if (!crudo) return PEDIDO_VACIO;
   try {
-    return { ...PEDIDO_VACIO, ...JSON.parse(crudo) };
+    const x = JSON.parse(crudo) as Partial<Pedido> | null;
+    if (!x || typeof x !== "object") return PEDIDO_VACIO;
+    // Si una parte quedó dañada, se descarta esa parte en lugar de romper la página.
+    return {
+      ...PEDIDO_VACIO,
+      ...x,
+      necesidades: Array.isArray(x.necesidades) ? x.necesidades : [],
+      rider: Array.isArray(x.rider) ? x.rider.filter((i) => i && typeof i.equipo_id === "string" && Number(i.cantidad) > 0) : [],
+      opciones: x.opciones && typeof x.opciones === "object" ? x.opciones : {},
+      entrega: typeof x.entrega === "string" ? x.entrega : "",
+      recogida: typeof x.recogida === "string" ? x.recogida : "",
+      nota: typeof x.nota === "string" ? x.nota : "",
+      lugar: x.lugar && Number.isFinite(x.lugar.lat) && Number.isFinite(x.lugar.lng) ? x.lugar : null,
+    };
   } catch {
     return PEDIDO_VACIO;
   }

@@ -133,7 +133,7 @@ export function VistaVerificacion({
     try {
       for (const p of piezas) {
         const ruta = `${uid}/${Crypto.randomUUID()}.jpg`;
-        const { error: e } = await supabase.storage.from("verificaciones").upload(ruta, fotos[p.id].datos, { contentType: "image/jpeg", upsert: false });
+        const { error: e } = await supabase.storage.from("verificaciones").upload(ruta, fotos[p.id].datos, { contentType: "image/jpeg", upsert: false, cacheControl: "0" });
         if (e) throw { code: /bucket/i.test(e.message) ? "SIN_BUCKET" : "SUBIDA", message: e.message };
         subidas.push(ruta);
       }

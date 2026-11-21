@@ -9,6 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Panel" };
 
+// Las solicitudes que se ven arriba en el panel: las por confirmar y las rentadas que aún no terminan.
+const visibleEnPanel = (r: ReservaFila) =>
+  r.estado === "pendiente" || ((r.estado === "confirmada" || r.estado === "en_curso") && Date.parse(r.recogida) >= Date.now());
+
 export default function Panel() {
   return (
     <section className="pagina-ancha">
@@ -51,13 +55,24 @@ async function Contenido() {
   ]);
   if (!c) return <p className="form-err">No pudimos cargar tu compañía. Recarga la página.</p>;
 
+  // Clientes con la identidad verificada (SQL 0012), solo de las solicitudes que se ven arriba.
+  const reservas = (resRes.data ?? []) as unknown as ReservaFila[];
+  const perfiles = await Promise.all(
+    reservas.filter(visibleEnPanel).map(async (r) => {
+      const { data } = await supabase.rpc("perfil_de_solicitud", { p_reserva: r.id });
+      return (data as { identidad_verificada?: boolean } | null)?.identidad_verificada ? r.id : null;
+    }),
+  );
+  const verificados = perfiles.filter((id): id is string => id !== null);
+
   return (
     <PanelVista
       c={c}
-      reservas={(resRes.data ?? []) as unknown as ReservaFila[]}
+      reservas={reservas}
       equipos={(eqs ?? []) as { id: string; unidades: number }[]}
       bloqueos={(bloqRes.data ?? []) as BloqueoPanel[]}
       resenas={(rs ?? []) as Resena[]}
+      verificados={verificados}
     />
   );
 }

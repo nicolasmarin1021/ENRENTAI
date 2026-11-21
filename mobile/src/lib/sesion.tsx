@@ -40,25 +40,55 @@ function parametros(url: string) {
   return valores;
 }
 
+// Seguridad: la app solo acepta un enlace de entrada si ella misma pidió el correo (en las últimas
+// 24 h, lo que dura el enlace de Supabase) y nunca cambia una sesión abierta por otra. Así nadie
+// puede meter a la persona en una cuenta ajena con un enlace falso (y quedarse con lo que suba).
+const CLAVE_ENLACE = "enrenta:esperando-enlace";
+const VIGENCIA_ENLACE = 24 * 60 * 60 * 1000;
+
+// Se llama justo antes de pedir un correo de confirmación o de entrada.
+export function esperarEnlaceDelCorreo() {
+  AsyncStorage.setItem(CLAVE_ENLACE, String(Date.now())).catch(() => {});
+}
+
+async function esperabaEnlace() {
+  const t = Number(await AsyncStorage.getItem(CLAVE_ENLACE).catch(() => null));
+  return t > 0 && Date.now() - t < VIGENCIA_ENLACE;
+}
+
 // Completa la entrada cuando la persona toca el enlace del correo en el celular.
 // Supabase devuelve la sesión en el enlace (tokens, código o token_hash, según la configuración).
 async function entrarConEnlace(url: string): Promise<string> {
-  const p = parametros(url);
+  let p: Record<string, string>;
+  try {
+    p = parametros(url);
+  } catch {
+    return "No pudimos leer ese enlace. Pide uno nuevo.";
+  }
   if (p.error_code || p.error) {
     return p.error_code === "otp_expired"
       ? "El enlace ya venció o ya se usó. Pide uno nuevo."
       : "No pudimos completar la entrada con ese enlace. Pide uno nuevo.";
   }
+  const conTokens = Boolean(p.access_token && p.refresh_token);
+  const conHash = Boolean(p.token_hash && p.type);
+  if (!conTokens && !p.code && !conHash) return ""; // no es un enlace de entrada
+
+  const { data: actual } = await supabase.auth.getSession();
+  if (actual.session) return ""; // ya hay alguien adentro: no se reemplaza su sesión
+  if (!(await esperabaEnlace())) {
+    return "Por seguridad, la app solo usa los enlaces que pediste desde este celular. Si era para confirmar tu cuenta, ya quedó confirmada: entra con tu correo y tu contraseña.";
+  }
+
   let error: { message: string } | null = null;
-  if (p.access_token && p.refresh_token) {
+  if (conTokens) {
     ({ error } = await supabase.auth.setSession({ access_token: p.access_token, refresh_token: p.refresh_token }));
   } else if (p.code) {
     ({ error } = await supabase.auth.exchangeCodeForSession(p.code));
-  } else if (p.token_hash && p.type) {
-    ({ error } = await supabase.auth.verifyOtp({ token_hash: p.token_hash, type: p.type as EmailOtpType }));
   } else {
-    return ""; // no es un enlace de entrada
+    ({ error } = await supabase.auth.verifyOtp({ token_hash: p.token_hash, type: p.type as EmailOtpType }));
   }
+  if (!error) AsyncStorage.removeItem(CLAVE_ENLACE).catch(() => {});
   return error ? "El enlace ya venció o ya se usó. Pide uno nuevo." : "";
 }
 
@@ -131,7 +161,9 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     if (!url || !supabaseConfigurado || enlacesVistos.current.has(url)) return;
     if (!/access_token|[?&#]code=|token_hash|error_code/.test(url)) return;
     enlacesVistos.current.add(url);
-    void entrarConEnlace(url).then(setErrorEnlace);
+    void entrarConEnlace(url)
+      .catch(() => "No pudimos completar la entrada con ese enlace. Pide uno nuevo.")
+      .then(setErrorEnlace);
   }, [url]);
 
   // Nombre y compañía de la persona que entró (se guardan con su id para no mostrar

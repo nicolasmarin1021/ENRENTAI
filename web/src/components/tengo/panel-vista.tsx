@@ -32,12 +32,14 @@ export function PanelVista({
   equipos,
   bloqueos,
   resenas,
+  verificados = [],
 }: {
   c: CompaniaPanel;
   reservas: ReservaFila[];
   equipos: { id: string; unidades: number }[];
   bloqueos: BloqueoPanel[];
   resenas: Resena[];
+  verificados?: string[]; // solicitudes cuyo cliente tiene la identidad verificada
 }) {
   const pendientes = reservas.filter((r) => r.estado === "pendiente");
   const rentada = (r: ReservaFila) => r.estado === "confirmada" || r.estado === "en_curso";
@@ -94,7 +96,7 @@ export function PanelVista({
           <h1 className="title-lg">{c.nombre}</h1>
           <p className="muted">
             Bodega en {c.zona ?? c.ciudad} · en ENRENTA desde {desde} ·{" "}
-            {c.verificada ? <span className="ok-txt">✓ Verificada</span> : <span className="warn-txt">En revisión</span>}
+            {c.verificada ? <span className="ok-txt">✓ Verificada</span> : <span className="warn-txt">Sin verificar</span>}
           </p>
         </div>
         <div className="row-actions">
@@ -128,8 +130,9 @@ export function PanelVista({
 
       {!c.verificada && (
         <p className="note">
-          ENRENTA revisa los datos de tu compañía antes de mostrar el sello de verificada. Mientras tanto ya puedes publicar y
-          recibir solicitudes.
+          Verifica tu compañía con su NIT y el RUT o el certificado de Cámara de Comercio para mostrar el sello «Verificada» a
+          los clientes. Es opcional: mientras tanto ya puedes publicar y recibir solicitudes.{" "}
+          <Link href="/tengo/verificacion">Verificar mi compañía</Link>
         </p>
       )}
 
@@ -151,7 +154,7 @@ export function PanelVista({
               <span className="fine">Cotizaciones que te pidieron por WhatsApp; no apartan equipo hasta que las marques como rentadas</span>
             </div>
             {pendientes.length ? (
-              pendientes.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" />)
+              pendientes.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" identidadVerificada={verificados.includes(r.id)} />)
             ) : (
               <p className="vacio">No tienes solicitudes por confirmar.</p>
             )}
@@ -163,7 +166,7 @@ export function PanelVista({
               <span className="fine">El equipo queda apartado en tu agenda en esas fechas</span>
             </div>
             {enCurso.length ? (
-              enCurso.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" />)
+              enCurso.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" identidadVerificada={verificados.includes(r.id)} />)
             ) : (
               <p className="vacio">Aún no tienes solicitudes rentadas.</p>
             )}

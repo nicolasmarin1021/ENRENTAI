@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { marcarEnlacePedido } from "@/lib/enlace";
 import { createClient } from "@/lib/supabase/client";
 
 export type Modo = "necesito" | "tengo";
@@ -66,6 +67,7 @@ export function EntrarConCodigo({ modo }: { modo: Modo }) {
     setOcupado(true);
     setError("");
     setAviso("");
+    marcarEnlacePedido();
     const { error: e } = await supabase.auth.signInWithOtp({
       email,
       options: {

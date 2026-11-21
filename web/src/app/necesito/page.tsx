@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { BotonSalir, EntrarConCodigo, FormNombre } from "@/components/entrar";
 import { getSesion } from "@/lib/sesion";
 import { supabaseConfigured } from "@/lib/supabase/config";
+import { AVISOS_ENLACE } from "@/lib/enlace";
 
 export const metadata: Metadata = { title: "Necesito equipos" };
 
@@ -75,8 +76,8 @@ async function Entrada({ searchParams }: Pick<PageProps<"/necesito">, "searchPar
   return (
     <>
       <Titulo />
-      {sp.enlace === "vencido" && (
-        <p className="form-err" role="alert">Ese enlace ya venció o ya se usó. Pide un código nuevo.</p>
+      {typeof sp.enlace === "string" && AVISOS_ENLACE[sp.enlace] && (
+        <p className="form-err" role="alert">{AVISOS_ENLACE[sp.enlace]}</p>
       )}
       <EntrarConCodigo modo="necesito" />
       <Link href="/explorar" className="link-btn" style={{ justifySelf: "center" }}>

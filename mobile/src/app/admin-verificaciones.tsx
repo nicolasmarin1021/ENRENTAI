@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -88,6 +89,7 @@ export function TarjetaPendiente({ v, onListo }: { v: Pendiente; onListo: () => 
   const [motivo, setMotivo] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState("");
+  const [sinBorrar, setSinBorrar] = useState(false); // la revisión quedó, pero las fotos no se borraron
   const clave = v.archivos.join(",");
 
   // Enlaces temporales para ver las fotos privadas.
@@ -110,9 +112,21 @@ export function TarjetaPendiente({ v, onListo }: { v: Pendiente; onListo: () => 
       setOcupado(false);
       return setError(mensajeError(e, "No pudimos guardar la revisión. Intenta de nuevo."));
     }
-    // Ya no se necesitan: se borran las fotos.
-    if (v.archivos.length) await supabase.storage.from("verificaciones").remove(v.archivos);
+    await borrarFotos();
+  }
+
+  // Ya no se necesitan: se borran las fotos (son datos sensibles). Si falla, se reintenta una vez y,
+  // si sigue fallando, la tarjeta se queda con un botón para volver a intentarlo.
+  async function borrarFotos() {
+    setOcupado(true);
+    const quitar = () => supabase.storage.from("verificaciones").remove(v.archivos);
+    let { error: e } = v.archivos.length ? await quitar() : { error: null };
+    if (e) ({ error: e } = await quitar());
     setOcupado(false);
+    if (e) {
+      setSinBorrar(true);
+      return setError("La revisión quedó guardada, pero no pudimos borrar las fotos. Revisa tu conexión y toca «Borrar las fotos».");
+    }
     onListo();
   }
 
@@ -140,13 +154,15 @@ export function TarjetaPendiente({ v, onListo }: { v: Pendiente; onListo: () => 
         <View key={ruta} style={{ gap: 6 }}>
           <Texto v="etiqueta">{NOMBRES_FOTOS[v.tipo][i] ?? `Foto ${i + 1}`}</Texto>
           <Pressable
-            onPress={() => (urls[ruta] ? Linking.openURL(urls[ruta]).catch(() => {}) : undefined)}
+            // Se abre dentro de la app (no queda en el historial de Safari).
+            onPress={() => (urls[ruta] ? WebBrowser.openBrowserAsync(urls[ruta]).catch(() => {}) : undefined)}
             accessibilityRole="imagebutton"
             accessibilityLabel={`Ampliar: ${NOMBRES_FOTOS[v.tipo][i] ?? "foto"}`}
             style={estilos.foto}
           >
             {urls[ruta] ? (
-              <Image source={{ uri: urls[ruta] }} style={StyleSheet.absoluteFill} contentFit="contain" transition={150} />
+              // Sin caché en disco: la cédula no queda guardada en el celular del admin.
+              <Image source={{ uri: urls[ruta] }} style={StyleSheet.absoluteFill} contentFit="contain" transition={150} cachePolicy="memory" />
             ) : (
               <Icono n="foto" tam={28} tinta={color.suave} />
             )}
@@ -160,7 +176,12 @@ export function TarjetaPendiente({ v, onListo }: { v: Pendiente; onListo: () => 
         {v.tipo === "compania" ? <Boton titulo="Consultar NIT (RUES)" tipo="secundario" chico onPress={() => Linking.openURL(CONSULTA_NIT).catch(() => {})} /> : null}
       </View>
 
-      {rechazando ? (
+      {sinBorrar ? (
+        <View style={{ gap: 8 }}>
+          {error ? <Aviso tono="mal" texto={error} /> : null}
+          <Boton titulo="Borrar las fotos" tipo="peligro" cargando={ocupado} onPress={borrarFotos} />
+        </View>
+      ) : rechazando ? (
         <View style={{ gap: 10 }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {MOTIVOS_RECHAZO.filter((m) => v.tipo === "compania" || !m.includes("NIT")).map((m) => (

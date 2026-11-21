@@ -12,8 +12,25 @@ const OCULTAS_BETA = [
   { source: "/tengo/liquidaciones", destination: "/tengo/panel" },
 ];
 
+// Encabezados de seguridad para todas las páginas:
+// - nadie puede mostrar ENRENTA dentro de otra página (evita engaños con clics encima);
+// - el navegador no adivina tipos de archivo;
+// - al salir a otro sitio no se manda la dirección completa de la página;
+// - la web no pide cámara, micrófono ni ubicación.
+const ENCABEZADOS = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+];
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: ENCABEZADOS }];
+  },
   partialPrefetching: true,
   async redirects() {
     return [

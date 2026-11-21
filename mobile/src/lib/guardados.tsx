@@ -22,7 +22,11 @@ export function GuardadosProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(CLAVE)
       .then((crudo) => {
-        if (crudo) setLista({ ...VACIA, ...(JSON.parse(crudo) as Partial<Lista>) });
+        if (!crudo) return;
+        // Solo listas de textos (si lo guardado está dañado, se ignora).
+        const x = JSON.parse(crudo) as Partial<Lista> | null;
+        const ids = (v: unknown) => (Array.isArray(v) ? v.filter((i): i is string => typeof i === "string") : []);
+        setLista({ equipos: ids(x?.equipos), companias: ids(x?.companias) });
       })
       .catch(() => {});
   }, []);
