@@ -15,6 +15,8 @@ export type PerfilCliente = {
   foto: string | null; // ruta en el bucket "avatares"
   miembro_desde?: string;
   rentas?: number;
+  identidad_verificada?: boolean; // con el SQL 0012: un admin revisó su cédula
+
   // Con el SQL 0011: lo que dicen de esta persona las compañías a las que les ha rentado.
   calificacion?: ResumenCalificacion | null;
   calificaciones?: Calificacion[];

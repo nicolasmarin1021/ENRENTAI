@@ -348,10 +348,17 @@ function FilaSolicitud({
       <Pressable onPress={onAbrir} style={({ pressed }) => [estilos.fila, pressed && { opacity: 0.6 }]} accessibilityRole="button" accessibilityLabel={`Ver la solicitud ${r.codigo}`}>
         <Avatar nombre={nombre} foto={perfil?.foto ?? null} tam={48} />
         <View style={{ flex: 1, gap: 2 }}>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-            <Texto peso={600} numberOfLines={1} style={{ flex: 1 }}>
-              {nombre}
-            </Texto>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <Texto peso={600} numberOfLines={1} style={{ flexShrink: 1 }}>
+                {nombre}
+              </Texto>
+              {perfil?.identidad_verificada ? (
+                <View accessibilityLabel="Identidad verificada">
+                  <Icono n="escudo" tam={15} tinta={color.ok} grosor={2.2} />
+                </View>
+              ) : null}
+            </View>
             <Texto peso={600} style={{ fontSize: 14 }}>
               {pesos(referencia(r))}
             </Texto>

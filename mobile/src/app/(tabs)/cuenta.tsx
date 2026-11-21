@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Avatar } from "@/componentes/perfil-cliente";
 import { completitud, leerMiPerfil, type PerfilCliente } from "@/lib/perfil";
 import { useSesion } from "@/lib/sesion";
+import { miVerificacion, type MiVerificacion } from "@/lib/verificacion";
 import { Boton, Encabezado, Pantalla, Tarjeta, Texto } from "@/ui/base";
 import { Icono } from "@/ui/iconos";
 import { Logo } from "@/ui/marca";
@@ -12,8 +13,9 @@ import { color } from "@/tema";
 // Cuenta: quién eres y la información de la BETA. (El modo Necesito | Tengo va arriba a la derecha
 // en todas las pestañas.)
 export default function Cuenta() {
-  const { usuario, nombre, compania, salir } = useSesion();
+  const { usuario, nombre, compania, admin, salir } = useSesion();
   const [perfil, setPerfil] = useState<PerfilCliente | null>(null);
+  const [verif, setVerif] = useState<MiVerificacion | null>(null);
 
   // Se vuelve a leer al entrar a la pestaña (por si acabas de editar tu perfil).
   useFocusEffect(
@@ -22,6 +24,9 @@ export default function Cuenta() {
       let vivo = true;
       void leerMiPerfil(usuario.id).then((r) => {
         if (vivo) setPerfil(r.perfil);
+      });
+      void miVerificacion(usuario.id, "cliente").then((r) => {
+        if (vivo) setVerif(r);
       });
       return () => {
         vivo = false;
@@ -79,6 +84,31 @@ export default function Cuenta() {
         </Tarjeta>
       )}
 
+      {/* Verificación de identidad (opcional) y, para los admins, la revisión. */}
+      {usuario ? (
+        <Tarjeta style={{ gap: 0, paddingVertical: 4 }}>
+          <Opcion
+            icono="escudo"
+            texto="Verificar mi identidad"
+            detalle={verif?.verificado ? "✓ Verificada" : verif?.ultima?.estado === "pendiente" ? "En revisión" : verif?.ultima?.estado === "rechazada" ? "Revisar" : undefined}
+            tonoDetalle={verif?.verificado ? color.ok : verif?.ultima?.estado === "rechazada" ? color.mal : color.suave}
+            onPress={() => router.push({ pathname: "/verificacion", params: { tipo: "cliente" } })}
+            ultimo={!compania && !admin}
+          />
+          {compania ? (
+            <Opcion
+              icono="bodega"
+              texto="Verificar mi compañía"
+              detalle={compania.verificada ? "✓ Verificada" : undefined}
+              tonoDetalle={color.ok}
+              onPress={() => router.push({ pathname: "/verificacion", params: { tipo: "compania" } })}
+              ultimo={!admin}
+            />
+          ) : null}
+          {admin ? <Opcion icono="check" texto="Revisar verificaciones (admin)" onPress={() => router.push("/admin-verificaciones")} ultimo /> : null}
+        </Tarjeta>
+      ) : null}
+
       <Tarjeta style={{ gap: 0, paddingVertical: 4 }}>
         <Opcion icono="bodega" texto="Pantalla de inicio" onPress={() => router.push("/bienvenida")} />
         <Opcion icono="info" texto="Cómo funciona la BETA" onPress={() => router.push("/como-funciona")} />
@@ -99,12 +129,16 @@ function Opcion({
   onPress,
   peligro = false,
   ultimo = false,
+  detalle,
+  tonoDetalle = color.suave,
 }: {
-  icono: "info" | "salir" | "bodega";
+  icono: "info" | "salir" | "bodega" | "escudo" | "check";
   texto: string;
   onPress: () => void;
   peligro?: boolean;
   ultimo?: boolean;
+  detalle?: string; // estado a la derecha ("✓ Verificada", "En revisión"…)
+  tonoDetalle?: string;
 }) {
   return (
     <Pressable
@@ -116,6 +150,11 @@ function Opcion({
       <Texto peso={500} tono={peligro ? color.mal : color.tinta} style={{ flex: 1 }}>
         {texto}
       </Texto>
+      {detalle ? (
+        <Texto v="fino" peso={600} tono={tonoDetalle}>
+          {detalle}
+        </Texto>
+      ) : null}
       {!peligro ? <Icono n="flecha" tam={16} tinta={color.suave} /> : null}
     </Pressable>
   );

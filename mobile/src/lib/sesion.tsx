@@ -14,6 +14,7 @@ type EstadoSesion = {
   usuario: { id: string; correo: string } | null;
   nombre: string;
   compania: MiCompania | null;
+  admin: boolean; // perfiles.es_admin: revisa las verificaciones de identidad
   modo: Modo;
   modoElegido: boolean; // la persona ya eligió en la pantalla de inicio (si no, se le muestra)
   listo: boolean; // ya se leyó la sesión guardada en el celular
@@ -61,14 +62,15 @@ async function entrarConEnlace(url: string): Promise<string> {
   return error ? "El enlace ya venció o ya se usó. Pide uno nuevo." : "";
 }
 
-type Perfil = { uid: string; nombre: string; compania: MiCompania | null };
+type Perfil = { uid: string; nombre: string; admin: boolean; compania: MiCompania | null };
 
 async function leerPerfil(uid: string): Promise<Perfil> {
   const [{ data: p }, { data: c }] = await Promise.all([
-    supabase.from("perfiles").select("nombre").eq("id", uid).maybeSingle(),
+    supabase.from("perfiles").select("nombre, es_admin").eq("id", uid).maybeSingle(),
     supabase.from("companias").select("id, nombre, verificada").eq("duenio", uid).order("creado").limit(1).maybeSingle(),
   ]);
-  return { uid, nombre: (p as { nombre: string | null } | null)?.nombre ?? "", compania: (c as MiCompania | null) ?? null };
+  const fila = p as { nombre: string | null; es_admin: boolean | null } | null;
+  return { uid, nombre: fila?.nombre ?? "", admin: fila?.es_admin === true, compania: (c as MiCompania | null) ?? null };
 }
 
 export function SesionProvider({ children }: { children: ReactNode }) {
@@ -141,6 +143,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const vigente = user && perfil?.uid === user.id ? perfil : null;
   const nombre = vigente?.nombre ?? "";
   const compania = vigente?.compania ?? null;
+  const admin = vigente?.admin ?? false;
 
   const cambiarModo = useCallback((m: Modo) => {
     setModo(m);
@@ -159,6 +162,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
         usuario: user ? { id: user.id, correo: user.email ?? "" } : null,
         nombre,
         compania,
+        admin,
         modo,
         modoElegido,
         listo: sesionLeida && modoLeido,

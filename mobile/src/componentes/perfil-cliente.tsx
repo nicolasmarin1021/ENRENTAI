@@ -54,6 +54,14 @@ export function TarjetaPerfil({ p }: { p: PerfilCliente }) {
       {p.descripcion ? <Texto style={estilos.descripcion}>{p.descripcion}</Texto> : null}
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {p.identidad_verificada ? (
+          <View style={[estilos.dato, { backgroundColor: color.okSuave }]}>
+            <Icono n="escudo" tam={14} tinta={color.ok} grosor={2.2} />
+            <Texto v="fino" tono={color.ok} peso={600}>
+              Identidad verificada
+            </Texto>
+          </View>
+        ) : null}
         {typeof p.rentas === "number" ? (
           <View style={estilos.dato}>
             <Icono n="check" tam={14} tinta={color.ok} grosor={2.4} />

@@ -65,6 +65,8 @@ export default function Raiz() {
               <Stack.Screen name="como-funciona" options={{ title: "Cómo funciona" }} />
               <Stack.Screen name="registro" options={{ title: "Registrar compañía" }} />
               <Stack.Screen name="perfil" options={{ title: "Tu perfil" }} />
+              <Stack.Screen name="verificacion" options={{ title: "Verificación" }} />
+              <Stack.Screen name="admin-verificaciones" options={{ title: "Verificaciones" }} />
               <Stack.Screen name="equipo-editar/[id]" options={{ title: "Equipo" }} />
             </Stack>
           </ThemeProvider>

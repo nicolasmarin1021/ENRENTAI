@@ -11,6 +11,7 @@ import { prepararFoto } from "@/lib/fotos";
 import { completitud, leerMiPerfil, MAX_DESCRIPCION, OCUPACIONES, type PerfilCliente } from "@/lib/perfil";
 import { useSesion } from "@/lib/sesion";
 import { supabase } from "@/lib/supabase";
+import { miVerificacion, type MiVerificacion } from "@/lib/verificacion";
 import { Aviso, Boton, Campo, Cargando, Chip, Tarjeta, Texto } from "@/ui/base";
 import { Icono } from "@/ui/iconos";
 import { color, margen } from "@/tema";
@@ -27,6 +28,7 @@ export default function Perfil() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [listo, setListo] = useState(false);
+  const [verif, setVerif] = useState<MiVerificacion | null>(null);
 
   useEffect(() => {
     if (!usuario) return;
@@ -34,6 +36,7 @@ export default function Perfil() {
       setP(r.perfil);
       setFaltaSql(r.faltaSql);
     });
+    void miVerificacion(usuario.id, "cliente").then(setVerif);
   }, [usuario]);
 
   if (!usuario) {
@@ -116,7 +119,7 @@ export default function Perfil() {
     void recargarPerfil();
   }
 
-  const vista: PerfilCliente = { ...p, foto: fotoNueva ? null : p.foto };
+  const vista: PerfilCliente = { ...p, foto: fotoNueva ? null : p.foto, identidad_verificada: verif?.verificado ?? false };
   const porcentaje = completitud({ ...p, foto: fotoNueva ? "nueva" : p.foto });
 
   return (
@@ -139,6 +142,32 @@ export default function Perfil() {
             <View style={[estilos.barraLlena, { width: `${porcentaje}%`, backgroundColor: porcentaje === 100 ? color.ok : color.acento }]} />
           </View>
         </View>
+
+        {/* Verificación de identidad (opcional): da la insignia que ven las compañías. */}
+        {verif && !verif.faltaSql ? (
+          <Pressable
+            onPress={() => router.push({ pathname: "/verificacion", params: { tipo: "cliente" } })}
+            style={({ pressed }) => [estilos.verificar, verif.verificado && { backgroundColor: color.okSuave }, pressed && { opacity: 0.85 }]}
+            accessibilityRole="button"
+          >
+            <Icono n="escudo" tam={22} tinta={verif.verificado ? color.ok : color.acento} grosor={2} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Texto peso={600} style={{ fontSize: 15 }}>
+                {verif.verificado ? "Identidad verificada" : verif.ultima?.estado === "pendiente" ? "Verificación en revisión" : "Verifica tu identidad"}
+              </Texto>
+              <Texto v="fino">
+                {verif.verificado
+                  ? "Las compañías ven la insignia en tus solicitudes."
+                  : verif.ultima?.estado === "pendiente"
+                    ? "Un admin de ENRENTA está revisando tus fotos."
+                    : verif.ultima?.estado === "rechazada"
+                      ? `No se pudo verificar: ${verif.ultima.motivo ?? "revisa las fotos"}. Toca para enviarla de nuevo.`
+                      : "Opcional: con tu cédula y una selfie ganas la insignia de verificado."}
+              </Texto>
+            </View>
+            <Icono n="flecha" tam={16} tinta={color.suave} />
+          </Pressable>
+        ) : null}
 
         {/* Foto */}
         <Tarjeta style={{ alignItems: "center", gap: 12 }}>
@@ -235,4 +264,5 @@ const estilos = StyleSheet.create({
   barra: { height: 6, borderRadius: 3, backgroundColor: color.lineaFuerte, overflow: "hidden" },
   barraLlena: { height: 6, borderRadius: 3 },
   fotoNueva: { borderRadius: 48, overflow: "hidden" },
+  verificar: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 16, backgroundColor: color.acentoSuave },
 });
