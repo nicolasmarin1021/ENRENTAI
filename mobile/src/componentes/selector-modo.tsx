@@ -13,7 +13,7 @@ export function SelectorModo({ flotante = false }: { flotante?: boolean }) {
     if (m === modo) return;
     if (Platform.OS !== "web") Haptics.selectionAsync().catch(() => {});
     cambiarModo(m);
-    router.replace(m === "tengo" ? "/panel" : "/explorar");
+    router.replace(m === "tengo" ? "/panel" : "/buscar");
   }
 
   return (

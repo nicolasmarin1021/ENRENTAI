@@ -75,6 +75,8 @@ export function IconoCategoria({ cat, tam = 20, tinta = color.acento }: { cat: s
 // Íconos de la interfaz (trazos de 24×24).
 const UI: Record<string, string> = {
   mapa: "M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6zM9 4v14M15 6v14",
+  lista: "M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01",
+  cuadricula: "M4 4h6.5v6.5H4zM13.5 4H20v6.5h-6.5zM4 13.5h6.5V20H4zM13.5 13.5H20V20h-6.5z",
   editar: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
   cerrar: "M6 6l12 12M18 6 6 18",
   flecha: "M9 5l7 7-7 7",

@@ -11,11 +11,12 @@ import { Icono, IconoCategoria } from "@/ui/iconos";
 import { Mapa } from "@/ui/mapa";
 import { color, fuente, radio } from "@/tema";
 
-// Pedido guiado de Explorar, en tres pasos (igual que la web): qué, cuándo y dónde.
+// Pedido guiado de Buscar equipos, en tres pasos (igual que la web): qué, cuándo y dónde.
 // Cada paso tiene arriba, fija, la barra Atrás / Continuar con el progreso.
 
-// Lo que Explorar le pasa a cada paso: avisos de conexión y el "deslizar para actualizar".
-type Marco = { avisos?: ReactNode; refresco: { refrescando: boolean; onRefrescar: () => void } };
+// Lo que Buscar equipos le pasa a cada paso: avisos de conexión, el "deslizar para actualizar" y,
+// arriba, el selector de subpaneles (Buscar equipos | Explorar).
+type Marco = { avisos?: ReactNode; refresco: { refrescando: boolean; onRefrescar: () => void }; cabeza?: ReactNode };
 
 // ============================================================================ Paso 1: ¿Qué?
 export function PasoQue({
@@ -24,6 +25,7 @@ export function PasoQue({
   onSiguiente,
   avisos,
   refresco,
+  cabeza,
 }: Marco & {
   categorias: Categoria[];
   equipos: EquipoPublico[];
@@ -87,7 +89,12 @@ export function PasoQue({
   return (
     <Pantalla
       {...refresco}
-      fijo={<NavPasos paso={1} onSiguiente={onSiguiente} textoSiguiente={total ? `Continuar · ${total}` : "Continuar"} deshabilitado={!total} />}
+      fijo={
+        <>
+          {cabeza}
+          <NavPasos paso={1} onSiguiente={onSiguiente} textoSiguiente={total ? `Continuar · ${total}` : "Continuar"} deshabilitado={!total} />
+        </>
+      }
     >
       {avisos}
       <View style={{ gap: 8 }}>
@@ -341,7 +348,7 @@ function ElegirFechaHora({ titulo, valor, onCambio, desde }: { titulo: string; v
   );
 }
 
-export function PasoCuando({ onSiguiente, onAtras, avisos, refresco }: Marco & { onSiguiente: () => void; onAtras: () => void }) {
+export function PasoCuando({ onSiguiente, onAtras, avisos, refresco, cabeza }: Marco & { onSiguiente: () => void; onAtras: () => void }) {
   const { pedido, guardar } = usePedido();
   const [error, setError] = useState("");
   const dias = diasDeRenta(pedido.entrega, pedido.recogida);
@@ -362,7 +369,15 @@ export function PasoCuando({ onSiguiente, onAtras, avisos, refresco }: Marco & {
   }
 
   return (
-    <Pantalla {...refresco} fijo={<NavPasos paso={2} onAtras={onAtras} onSiguiente={continuar} />}>
+    <Pantalla
+      {...refresco}
+      fijo={
+        <>
+          {cabeza}
+          <NavPasos paso={2} onAtras={onAtras} onSiguiente={continuar} />
+        </>
+      }
+    >
       {avisos}
       <View style={{ gap: 8 }}>
         <Texto style={estilos.tituloPaso}>¿Cuándo los necesitas?</Texto>
@@ -402,6 +417,7 @@ export function PasoDonde({
   onAtras,
   avisos,
   refresco,
+  cabeza,
 }: Marco & { lugares: LugarPublico[]; onSiguiente: () => void; onAtras: () => void }) {
   const { pedido, guardar } = usePedido();
   const propio = pedido.lugar && !pedido.lugar.id ? pedido.lugar : null;
@@ -431,7 +447,15 @@ export function PasoDonde({
   }
 
   return (
-    <Pantalla {...refresco} fijo={<NavPasos paso={3} onAtras={onAtras} onSiguiente={continuar} textoSiguiente="Ver disponibilidad" />}>
+    <Pantalla
+      {...refresco}
+      fijo={
+        <>
+          {cabeza}
+          <NavPasos paso={3} onAtras={onAtras} onSiguiente={continuar} textoSiguiente="Ver disponibilidad" />
+        </>
+      }
+    >
       {avisos}
       <View style={{ gap: 8 }}>
         <Texto style={estilos.tituloPaso}>¿Dónde es el show?</Texto>

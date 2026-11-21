@@ -39,7 +39,10 @@ export default function Guardados() {
           <Texto v="fino" style={{ textAlign: "center", fontSize: 14.5 }}>
             Toca ♡ en un equipo o en una compañía para tenerlos a mano aquí cuando armes tu próximo rider.
           </Texto>
-          <Boton titulo="Explorar equipos" onPress={() => router.navigate("/explorar")} />
+          <Boton
+            titulo="Explorar equipos"
+            onPress={() => router.navigate({ pathname: "/buscar", params: { vista: "explorar", n: String(Date.now()) } })}
+          />
         </Tarjeta>
       ) : null}
 

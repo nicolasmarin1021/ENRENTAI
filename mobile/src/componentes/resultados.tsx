@@ -24,10 +24,18 @@ const vibrar = () => {
   if (NATIVO) Haptics.selectionAsync().catch(() => {});
 };
 
-// Explorar, después del pedido guiado: el mapa a pantalla completa (como el mapa de Airbnb).
+// Buscar equipos, después del pedido guiado: el mapa a pantalla completa (como el mapa de Airbnb).
 // Cada compañía muestra en el mapa la referencia de equipo que tiene para lo que se busca; al
 // tocarla aparece su tarjeta. Abajo, un panel con la lista que se arrastra hacia arriba.
-export function Resultados({ catalogo, onEditar }: { catalogo: Catalogo; onEditar: (paso: 1 | 2 | 3) => void }) {
+export function Resultados({
+  catalogo,
+  onEditar,
+  onExplorar,
+}: {
+  catalogo: Catalogo;
+  onEditar: (paso: 1 | 2 | 3) => void;
+  onExplorar: () => void; // pasar al subpanel Explorar (todos los equipos)
+}) {
   const { pedido, libres } = usePedido();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -153,11 +161,26 @@ export function Resultados({ catalogo, onEditar }: { catalogo: Catalogo; onEdita
 
       {/* Arriba: resumen del pedido (se toca para editarlo) y una píldora por cada cosa del pedido. */}
       <View style={[estilos.arriba, { top: arriba }]} pointerEvents="box-none">
-        {/* Volver al lugar y, arriba a la derecha, el interruptor Necesito | Tengo. */}
-        <View style={[estilos.fila, { justifyContent: "space-between" }]} pointerEvents="box-none">
+        {/* Volver al lugar, pasar a Explorar y, arriba a la derecha, el interruptor Necesito | Tengo. */}
+        <View style={estilos.fila} pointerEvents="box-none">
           <Pressable onPress={() => onEditar(3)} style={[estilos.redondo, { width: 40, height: 40 }]} accessibilityRole="button" accessibilityLabel="Cambiar el lugar del show">
             <Icono n="atras" tam={20} grosor={2} />
           </Pressable>
+          <Pressable
+            onPress={() => {
+              vibrar();
+              onExplorar();
+            }}
+            style={({ pressed }) => [estilos.explorar, pressed && { opacity: 0.85 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Explorar todos los equipos"
+          >
+            <Icono n="cuadricula" tam={15} grosor={2} />
+            <Texto peso={600} style={{ fontSize: 13.5 }}>
+              Explorar
+            </Texto>
+          </Pressable>
+          <View style={{ flex: 1 }} />
           <SelectorModo flotante />
         </View>
         <View style={estilos.fila}>
@@ -283,6 +306,16 @@ const estilos = StyleSheet.create({
     backgroundColor: color.superficie,
     alignItems: "center",
     justifyContent: "center",
+    ...sombra,
+  },
+  explorar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: color.superficie,
     ...sombra,
   },
   chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 2 },

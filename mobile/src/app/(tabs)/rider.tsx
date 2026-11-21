@@ -147,10 +147,10 @@ export default function Rider() {
         <Tarjeta style={{ alignItems: "flex-start" }}>
           <Texto>
             {!pedido.rider.length
-              ? "Tu rider está vacío. Busca equipos en Explorar y agrégalos aquí."
-              : "Completa las fechas y el lugar del show en Explorar para ver la cotización."}
+              ? "Tu rider está vacío. Busca equipos (o explóralos todos) y agrégalos aquí."
+              : "Completa las fechas y el lugar del show en Buscar equipos para ver la cotización."}
           </Texto>
-          <Boton titulo="Ir a Explorar" onPress={() => router.navigate("/explorar")} />
+          <Boton titulo="Ir a Buscar equipos" onPress={() => router.navigate("/buscar")} />
         </Tarjeta>
       ) : (
         <>
@@ -160,7 +160,7 @@ export default function Rider() {
             <Texto v="fino">
               {textoFecha(pedido.entrega)} → {textoFecha(pedido.recogida)} · {plural(dias, "día", "días")}
             </Texto>
-            <Boton titulo="Cambiar fechas o lugar" tipo="enlace" onPress={() => router.navigate("/explorar")} />
+            <Boton titulo="Cambiar fechas o lugar" tipo="enlace" onPress={() => router.navigate("/buscar")} />
           </Tarjeta>
 
           {grupos.map((g) => (

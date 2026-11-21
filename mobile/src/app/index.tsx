@@ -13,10 +13,10 @@ export default function Inicio() {
       <Bienvenida
         onElegir={(m) => {
           cambiarModo(m);
-          router.replace(m === "tengo" ? "/panel" : "/explorar");
+          router.replace(m === "tengo" ? "/panel" : "/buscar");
         }}
       />
     );
   }
-  return <Redirect href={modo === "tengo" ? "/panel" : "/explorar"} />;
+  return <Redirect href={modo === "tengo" ? "/panel" : "/buscar"} />;
 }

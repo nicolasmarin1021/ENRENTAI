@@ -97,7 +97,7 @@ export default function Solicitudes() {
               ? "Aquí verás las rentas que ya terminaron (para calificar a la compañía), las que no se concretaron y las que cancelaste."
               : "No tienes solicitudes activas."}
           </Texto>
-          {ver === "activas" ? <Boton titulo="Buscar equipos" onPress={() => router.navigate("/explorar")} /> : null}
+          {ver === "activas" ? <Boton titulo="Buscar equipos" onPress={() => router.navigate("/buscar")} /> : null}
         </Tarjeta>
       )}
     </Pantalla>

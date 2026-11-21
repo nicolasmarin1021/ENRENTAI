@@ -10,7 +10,7 @@ export default function PantallaBienvenida() {
       onElegir={(m) => {
         cambiarModo(m);
         if (router.canGoBack()) router.back();
-        router.navigate(m === "tengo" ? "/panel" : "/explorar");
+        router.navigate(m === "tengo" ? "/panel" : "/buscar");
       }}
     />
   );

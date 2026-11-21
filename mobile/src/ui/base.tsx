@@ -244,6 +244,7 @@ export function Pantalla({
   onRefrescar,
   conPestanas = true,
   fijo,
+  lleno = false,
   style,
 }: {
   children: ReactNode;
@@ -251,6 +252,7 @@ export function Pantalla({
   onRefrescar?: () => void;
   conPestanas?: boolean;
   fijo?: ReactNode; // algo que queda fijo arriba mientras el resto se desplaza (p. ej. Atrás / Continuar)
+  lleno?: boolean; // el contenido ocupa todo el espacio y se desplaza solo (p. ej. un mapa o una lista propia)
   style?: StyleProp<ViewStyle>;
 }) {
   const insets = useSafeAreaInsets();
@@ -265,6 +267,8 @@ export function Pantalla({
         </View>
       ) : null}
       {fijo ? <View style={estilos.fijo}>{fijo}</View> : null}
+      {lleno ? <View style={[{ flex: 1 }, style]}>{children}</View> : null}
+      {lleno ? null : (
       <ScrollView
         style={{ flex: 1 }}
         contentInsetAdjustmentBehavior="never"
@@ -287,6 +291,7 @@ export function Pantalla({
       >
         {children}
       </ScrollView>
+      )}
     </View>
   );
 }

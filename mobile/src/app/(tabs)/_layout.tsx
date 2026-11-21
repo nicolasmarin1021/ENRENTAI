@@ -6,13 +6,14 @@ import { useSesion } from "@/lib/sesion";
 import { color, fuente } from "@/tema";
 
 // Pestañas de abajo (las nativas del iPhone). Cambian según el modo:
-// cliente → Explorar, Rider y Solicitudes · compañía → Panel, Inventario y Tarifas. Cuenta siempre.
+// cliente → Buscar equipos (con su subpanel Explorar), Guardados, Rider y Solicitudes ·
+// compañía → Panel, Inventario y Tarifas. Cuenta siempre.
 export default function Pestanas() {
   const { modo } = useSesion();
   const { pedido } = usePedido();
   const cliente = modo === "necesito";
   const enRider = pedido.rider.reduce((a, i) => a + i.cantidad, 0);
-  // El mapa de Explorar esconde la barra mientras está en primer plano (lib/barra.tsx).
+  // El mapa de resultados de Buscar equipos esconde la barra mientras está en primer plano (lib/barra.tsx).
   const [barraOculta, setBarraOculta] = useState(false);
 
   return (
@@ -24,9 +25,10 @@ export default function Pestanas() {
       backgroundColor={color.superficie}
       badgeBackgroundColor={color.coral}
     >
-      <NativeTabs.Trigger name="explorar" hidden={!cliente}>
-        <NativeTabs.Trigger.Label>Explorar</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: "map", selected: "map.fill" }} md="map" />
+      {/* "Buscar equipos": en la barra dice "Buscar" porque el nombre completo no cabe en el iPhone. */}
+      <NativeTabs.Trigger name="buscar" hidden={!cliente}>
+        <NativeTabs.Trigger.Label>Buscar</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="guardados" hidden={!cliente}>
         <NativeTabs.Trigger.Label>Guardados</NativeTabs.Trigger.Label>
