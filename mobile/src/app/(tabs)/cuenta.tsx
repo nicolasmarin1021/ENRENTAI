@@ -1,68 +1,83 @@
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { iniciales } from "@/lib/formato";
-import { useSesion, type Modo } from "@/lib/sesion";
-import { Boton, Encabezado, Pantalla, Segmentos, Tarjeta, Texto } from "@/ui/base";
+import { Avatar } from "@/componentes/perfil-cliente";
+import { completitud, leerMiPerfil, type PerfilCliente } from "@/lib/perfil";
+import { useSesion } from "@/lib/sesion";
+import { Boton, Encabezado, Pantalla, Tarjeta, Texto } from "@/ui/base";
 import { Icono } from "@/ui/iconos";
 import { Logo } from "@/ui/marca";
-import { color, fuente } from "@/tema";
+import { color } from "@/tema";
 
-// Cuenta: quién eres, en qué modo usas la app (cliente o compañía) y la información de la BETA.
+// Cuenta: quién eres y la información de la BETA. (El modo Necesito | Tengo va arriba a la derecha
+// en todas las pestañas.)
 export default function Cuenta() {
-  const { usuario, nombre, compania, modo, cambiarModo, salir } = useSesion();
+  const { usuario, nombre, compania, salir } = useSesion();
+  const [perfil, setPerfil] = useState<PerfilCliente | null>(null);
 
-  function elegirModo(m: Modo) {
-    cambiarModo(m);
-    router.replace(m === "tengo" ? "/panel" : "/explorar");
-  }
+  // Se vuelve a leer al entrar a la pestaña (por si acabas de editar tu perfil).
+  useFocusEffect(
+    useCallback(() => {
+      if (!usuario) return;
+      let vivo = true;
+      void leerMiPerfil(usuario.id).then((r) => {
+        if (vivo) setPerfil(r.perfil);
+      });
+      return () => {
+        vivo = false;
+      };
+    }, [usuario]),
+  );
+
+  const porcentaje = perfil ? completitud(perfil) : 0;
+  const linea = perfil ? [perfil.ocupacion, perfil.empresa].filter(Boolean).join(" · ") : "";
 
   return (
     <Pantalla>
       <Encabezado titulo="Cuenta" />
 
       {usuario ? (
-        <Tarjeta style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <View style={estilos.avatar}>
-            <Texto style={estilos.avatarTexto}>{iniciales(nombre || usuario.correo)}</Texto>
-          </View>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Texto peso={600} style={{ fontSize: 17 }}>
-              {nombre || "Sin nombre"}
-            </Texto>
-            <Texto v="fino" numberOfLines={1}>
-              {usuario.correo}
-            </Texto>
-            {compania ? (
-              <Texto v="fino" tono={color.acento}>
-                {compania.nombre}
-                {compania.verificada ? " · verificada" : ""}
-              </Texto>
+        <Pressable onPress={() => router.push("/perfil")} accessibilityRole="button" accessibilityLabel="Editar tu perfil" style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
+          <Tarjeta style={{ gap: 14 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+              <Avatar nombre={perfil?.nombre || nombre || usuario.correo} foto={perfil?.foto ?? null} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Texto peso={600} style={{ fontSize: 17 }} numberOfLines={1}>
+                  {perfil?.nombre || nombre || "Sin nombre"}
+                </Texto>
+                <Texto v="fino" numberOfLines={1}>
+                  {linea || usuario.correo}
+                </Texto>
+                {compania ? (
+                  <Texto v="fino" tono={color.acento} numberOfLines={1}>
+                    {compania.nombre}
+                    {compania.verificada ? " · verificada" : ""}
+                  </Texto>
+                ) : null}
+              </View>
+              <Icono n="flecha" tam={16} tinta={color.suave} />
+            </View>
+            {perfil && porcentaje < 100 ? (
+              <View style={estilos.completar}>
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Texto peso={600} style={{ fontSize: 14 }}>
+                    Completa tu perfil · {porcentaje}%
+                  </Texto>
+                  <View style={estilos.barra}>
+                    <View style={[estilos.barraLlena, { width: `${porcentaje}%` }]} />
+                  </View>
+                  <Texto v="fino">Con foto, a qué te dedicas y dónde trabajas, las compañías confían más en ti.</Texto>
+                </View>
+              </View>
             ) : null}
-          </View>
-        </Tarjeta>
+          </Tarjeta>
+        </Pressable>
       ) : (
         <Tarjeta>
           <Texto>Entra con tu correo para pedir cotizaciones, ver tus solicitudes o publicar los equipos de tu compañía.</Texto>
           <Boton titulo="Entrar" onPress={() => router.push("/entrar")} />
         </Tarjeta>
       )}
-
-      <Tarjeta>
-        <Texto v="etiqueta">Usar ENRENTA como</Texto>
-        <Segmentos
-          opciones={[
-            { id: "necesito", texto: "Necesito equipos" },
-            { id: "tengo", texto: "Tengo equipos" },
-          ]}
-          valor={modo}
-          onCambio={elegirModo}
-        />
-        <Texto v="fino">
-          {modo === "necesito"
-            ? "Buscas equipos para un show, armas tu rider y pides la cotización por WhatsApp."
-            : "Publicas los equipos de tu compañía, recibes cotizaciones por WhatsApp y marcas lo que rentaste."}
-        </Texto>
-      </Tarjeta>
 
       <Tarjeta style={{ gap: 0, paddingVertical: 4 }}>
         <Opcion icono="bodega" texto="Pantalla de inicio" onPress={() => router.push("/bienvenida")} />
@@ -107,8 +122,9 @@ function Opcion({
 }
 
 const estilos = StyleSheet.create({
-  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: color.acento, alignItems: "center", justifyContent: "center" },
-  avatarTexto: { color: "#FFFFFF", fontFamily: fuente[600], fontSize: 18 },
+  completar: { flexDirection: "row", gap: 12, backgroundColor: color.acentoSuave, borderRadius: 14, padding: 12 },
+  barra: { height: 6, borderRadius: 3, backgroundColor: "#FFFFFF", overflow: "hidden" },
+  barraLlena: { height: 6, borderRadius: 3, backgroundColor: color.acento },
   opcion: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14 },
   opcionLinea: { borderBottomWidth: 1, borderBottomColor: color.linea },
 });

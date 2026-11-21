@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { useIsFocused } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,6 +14,7 @@ import { Hoja, type PosicionHoja } from "@/ui/hoja";
 import { Icono, IconoCategoria } from "@/ui/iconos";
 import { Mapa, type MapaRef, type Nivel } from "@/ui/mapa";
 import { color, fuente, radio } from "@/tema";
+import { SelectorModo } from "./selector-modo";
 import { TarjetaMapa, type DatosTarjeta } from "./tarjeta-mapa";
 
 type Resultado = DatosTarjeta & { pin: string; nivel: Nivel; cuenta: number; dist: number };
@@ -121,8 +123,11 @@ export function Resultados({ catalogo, onEditar }: { catalogo: Catalogo; onEdita
   }
 
   // Con el mapa en primer plano (una compañía elegida o la lista abajo) la barra de pestañas se
-  // esconde, como en Airbnb; al subir la lista vuelve a aparecer.
-  const barraOculta = sel !== null || hoja === "abajo" || hoja === "oculta";
+  // esconde, como en Airbnb; al subir la lista vuelve a aparecer. Solo mientras esta pestaña está
+  // a la vista: al pasar a otra (el Rider, por ejemplo) el mapa sigue abierto detrás y la barra
+  // tiene que volver.
+  const enVista = useIsFocused();
+  const barraOculta = enVista && (sel !== null || hoja === "abajo" || hoja === "oculta");
   useBarraOculta(barraOculta);
   const web = Platform.OS === "web";
   const arriba = insets.top + (web ? 72 : 8); // en la web (solo para revisar) las pestañas van arriba y no se esconden
@@ -137,7 +142,7 @@ export function Resultados({ catalogo, onEditar }: { catalogo: Catalogo; onEdita
         centro={lugar}
         delta={0.16}
         ajustar
-        margen={{ top: arriba + 130, right: 60, bottom: insets.bottom + 130, left: 60 }}
+        margen={{ top: arriba + 180, right: 60, bottom: insets.bottom + 130, left: 60 }}
         lugar={lugar}
         marcadores={resultados.map((r) => ({ id: r.c.id, lat: r.c.lat, lng: r.c.lng, texto: r.pin, nivel: r.nivel }))}
         activo={sel}
@@ -148,10 +153,14 @@ export function Resultados({ catalogo, onEditar }: { catalogo: Catalogo; onEdita
 
       {/* Arriba: resumen del pedido (se toca para editarlo) y una píldora por cada cosa del pedido. */}
       <View style={[estilos.arriba, { top: arriba }]} pointerEvents="box-none">
-        <View style={estilos.fila}>
-          <Pressable onPress={() => onEditar(3)} style={estilos.redondo} accessibilityRole="button" accessibilityLabel="Cambiar el lugar del show">
+        {/* Volver al lugar y, arriba a la derecha, el interruptor Necesito | Tengo. */}
+        <View style={[estilos.fila, { justifyContent: "space-between" }]} pointerEvents="box-none">
+          <Pressable onPress={() => onEditar(3)} style={[estilos.redondo, { width: 40, height: 40 }]} accessibilityRole="button" accessibilityLabel="Cambiar el lugar del show">
             <Icono n="atras" tam={20} grosor={2} />
           </Pressable>
+          <SelectorModo flotante />
+        </View>
+        <View style={estilos.fila}>
           <Pressable onPress={() => onEditar(1)} style={estilos.busqueda} accessibilityRole="button" accessibilityLabel="Editar el pedido">
             <Texto peso={600} style={{ fontSize: 15 }} numberOfLines={1}>
               Equipos cerca de {lugar.nombre}
@@ -217,7 +226,7 @@ export function Resultados({ catalogo, onEditar }: { catalogo: Catalogo; onEdita
       {alto > 0 ? (
         <Hoja
           alto={alto}
-          arriba={arriba + 120}
+          arriba={arriba + 170}
           asomada={insets.bottom + 62}
           posicion={hoja}
           onPosicion={setHoja}

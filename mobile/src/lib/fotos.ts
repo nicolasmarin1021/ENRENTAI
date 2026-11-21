@@ -6,10 +6,10 @@ import type { ImagePickerAsset } from "expo-image-picker";
 
 export type FotoLista = { uri: string; datos: ArrayBuffer };
 
-export async function prepararFoto(a: ImagePickerAsset): Promise<FotoLista> {
+export async function prepararFoto(a: ImagePickerAsset, max = 1600): Promise<FotoLista> {
   const lado = Math.max(a.width || 0, a.height || 0);
   const ctx = ImageManipulator.manipulate(a.uri);
-  if (lado > 1600) ctx.resize(a.width >= a.height ? { width: 1600 } : { height: 1600 });
+  if (lado > max) ctx.resize(a.width >= a.height ? { width: max } : { height: max });
   const imagen = await ctx.renderAsync();
   const r = await imagen.saveAsync({ format: SaveFormat.JPEG, compress: 0.82, base64: true });
   if (!r.base64) throw new Error("No se pudo preparar la foto");

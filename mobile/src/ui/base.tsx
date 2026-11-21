@@ -16,7 +16,9 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SelectorModo } from "@/componentes/selector-modo";
 import { color, fuente, margen, radio, sombra, type Peso } from "@/tema";
+import { Logo } from "./marca";
 
 // Piezas de interfaz de ENRENTA: se usan en todas las pantallas para que la app se vea igual
 // en todas partes (equivalen a las clases .btn, .card, .field, .tag… de la web).
@@ -234,46 +236,58 @@ export function Cantidad({
 }
 
 // ---------------------------------------------------------------- Pantalla con desplazamiento
-// Respeta la muesca del iPhone y deja espacio para la barra de pestañas.
+// Respeta la muesca del iPhone y deja espacio para la barra de pestañas. En las pestañas lleva
+// una barra fija arriba: el logo a la izquierda y el interruptor Necesito | Tengo a la derecha.
 export function Pantalla({
   children,
   refrescando,
   onRefrescar,
   conPestanas = true,
+  fijo,
   style,
 }: {
   children: ReactNode;
   refrescando?: boolean;
   onRefrescar?: () => void;
   conPestanas?: boolean;
+  fijo?: ReactNode; // algo que queda fijo arriba mientras el resto se desplaza (p. ej. Atrás / Continuar)
   style?: StyleProp<ViewStyle>;
 }) {
   const insets = useSafeAreaInsets();
-  const ios = Platform.OS === "ios";
+  const web = Platform.OS === "web";
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: color.fondo }}
-      contentInsetAdjustmentBehavior={ios ? "automatic" : "never"}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      contentContainerStyle={[
-        {
-          paddingHorizontal: margen,
-          // En la web (solo para revisar en el computador) las pestañas van arriba.
-          paddingTop: ios && conPestanas ? 8 : insets.top + 12 + (Platform.OS === "web" && conPestanas ? 64 : 0),
-          paddingBottom: (ios ? 0 : insets.bottom) + (conPestanas ? 96 : 32),
-          gap: 16,
-        },
-        style,
-      ]}
-      refreshControl={
-        onRefrescar ? (
-          <RefreshControl refreshing={refrescando ?? false} onRefresh={onRefrescar} tintColor={color.acento} />
-        ) : undefined
-      }
-    >
-      {children}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: color.fondo }}>
+      {conPestanas ? (
+        // En la web (solo para revisar en el computador) las pestañas van arriba.
+        <View style={[estilos.barraSuperior, { paddingTop: insets.top + (web ? 66 : 6) }]}>
+          <Logo alto={18} />
+          <SelectorModo />
+        </View>
+      ) : null}
+      {fijo ? <View style={estilos.fijo}>{fijo}</View> : null}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentInsetAdjustmentBehavior="never"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        contentContainerStyle={[
+          {
+            paddingHorizontal: margen,
+            paddingTop: conPestanas ? 10 : insets.top + 12,
+            paddingBottom: insets.bottom + (conPestanas ? 96 : 32),
+            gap: 16,
+          },
+          style,
+        ]}
+        refreshControl={
+          onRefrescar ? (
+            <RefreshControl refreshing={refrescando ?? false} onRefresh={onRefrescar} tintColor={color.acento} />
+          ) : undefined
+        }
+      >
+        {children}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -347,6 +361,23 @@ export function Cargando({ texto = "Cargando…" }: { texto?: string }) {
 }
 
 export const estilos = StyleSheet.create({
+  fijo: {
+    paddingHorizontal: margen,
+    paddingTop: 4,
+    paddingBottom: 12,
+    backgroundColor: color.fondo,
+    borderBottomWidth: 1,
+    borderBottomColor: color.linea,
+  },
+  barraSuperior: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingHorizontal: margen,
+    paddingBottom: 8,
+    backgroundColor: color.fondo,
+  },
   boton: {
     minHeight: 48,
     paddingHorizontal: 20,

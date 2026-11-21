@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type LayoutChangeEvent, type ScrollViewInstance } from "react-native";
 import { adivinarCategoria, coincide, equiposPara, norm } from "@/lib/busqueda";
 import { NOMBRE_CORTO, type Categoria, type EquipoPublico, type LugarPublico } from "@/lib/catalogo";
@@ -6,19 +6,25 @@ import { diasDeRenta, etiquetaDia, leerLocal, pesos, plural, textoFecha, ymdLoca
 import { MEDELLIN, type Punto } from "@/lib/geo";
 import { nuevoId, type LugarPedido, type Necesidad } from "@/lib/pedido";
 import { usePedido } from "@/lib/pedido";
-import { Aviso, Boton, Campo, Cantidad, Chip, Segmentos, Tarjeta, Texto } from "@/ui/base";
+import { Aviso, Boton, Campo, Cantidad, Chip, Pantalla, Segmentos, Tarjeta, Texto } from "@/ui/base";
 import { Icono, IconoCategoria } from "@/ui/iconos";
 import { Mapa } from "@/ui/mapa";
 import { color, fuente, radio } from "@/tema";
 
 // Pedido guiado de Explorar, en tres pasos (igual que la web): qué, cuándo y dónde.
+// Cada paso tiene arriba, fija, la barra Atrás / Continuar con el progreso.
+
+// Lo que Explorar le pasa a cada paso: avisos de conexión y el "deslizar para actualizar".
+type Marco = { avisos?: ReactNode; refresco: { refrescando: boolean; onRefrescar: () => void } };
 
 // ============================================================================ Paso 1: ¿Qué?
 export function PasoQue({
   categorias,
   equipos,
   onSiguiente,
-}: {
+  avisos,
+  refresco,
+}: Marco & {
   categorias: Categoria[];
   equipos: EquipoPublico[];
   onSiguiente: () => void;
@@ -79,8 +85,11 @@ export function PasoQue({
   const anchoTipo = Math.floor((Math.min(width, 640) - 32 - 3 * 10) / 4);
 
   return (
-    <>
-      <Progreso paso={1} />
+    <Pantalla
+      {...refresco}
+      fijo={<NavPasos paso={1} onSiguiente={onSiguiente} textoSiguiente={total ? `Continuar · ${total}` : "Continuar"} deshabilitado={!total} />}
+    >
+      {avisos}
       <View style={{ gap: 8 }}>
         <Texto style={estilos.tituloPaso}>¿Qué necesitas rentar?</Texto>
         <Texto v="fino" style={estilos.subPaso}>
@@ -224,24 +233,59 @@ export function PasoQue({
           })}
         </View>
       ) : null}
-
-      <Boton titulo={total ? `Continuar · ${plural(total, "equipo", "equipos")}` : "Continuar"} bloque onPress={onSiguiente} deshabilitado={!total} />
-    </>
+      {!total ? (
+        <Texto v="fino" style={{ textAlign: "center" }}>
+          Agrega al menos un equipo para continuar.
+        </Texto>
+      ) : null}
+    </Pantalla>
   );
 }
 
-// Barra de los 3 pasos del pedido.
-export function Progreso({ paso }: { paso: 1 | 2 | 3 }) {
+// Barra fija de los pasos: ‹ Atrás · Paso n de 3 · Continuar ›, y debajo el progreso.
+function NavPasos({
+  paso,
+  onAtras,
+  onSiguiente,
+  textoSiguiente = "Continuar",
+  deshabilitado = false,
+}: {
+  paso: 1 | 2 | 3;
+  onAtras?: () => void;
+  onSiguiente: () => void;
+  textoSiguiente?: string;
+  deshabilitado?: boolean;
+}) {
   return (
-    <View style={{ gap: 8 }} accessibilityLabel={`Paso ${paso} de 3`}>
-      <View style={{ flexDirection: "row", gap: 6 }}>
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        {onAtras ? (
+          <Pressable onPress={onAtras} style={({ pressed }) => [estilos.navAtras, pressed && { opacity: 0.6 }]} accessibilityRole="button" accessibilityLabel="Atrás" hitSlop={6}>
+            <Icono n="atras" tam={18} grosor={2.2} />
+            <Texto peso={600}>Atrás</Texto>
+          </Pressable>
+        ) : null}
+        <Texto v="etiqueta" style={{ flex: 1, textAlign: onAtras ? "center" : "left" }} numberOfLines={1}>
+          {onAtras ? `${paso} de 3` : `Paso ${paso} de 3 · ${["Qué", "Cuándo", "Dónde"][paso - 1]}`}
+        </Texto>
+        <Pressable
+          onPress={onSiguiente}
+          disabled={deshabilitado}
+          style={({ pressed }) => [estilos.navSiguiente, deshabilitado && { opacity: 0.4 }, pressed && { opacity: 0.85 }]}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: deshabilitado }}
+        >
+          <Texto peso={600} tono="#FFFFFF" numberOfLines={1}>
+            {textoSiguiente}
+          </Texto>
+          <Icono n="flechaDerecha" tam={17} tinta="#FFFFFF" grosor={2.2} />
+        </Pressable>
+      </View>
+      <View style={{ flexDirection: "row", gap: 6 }} accessibilityLabel={`Paso ${paso} de 3`}>
         {[1, 2, 3].map((i) => (
           <View key={i} style={[estilos.segmento, i <= paso && { backgroundColor: color.acento }]} />
         ))}
       </View>
-      <Texto v="etiqueta">
-        Paso {paso} de 3 · {["Qué", "Cuándo", "Dónde"][paso - 1]}
-      </Texto>
     </View>
   );
 }
@@ -297,7 +341,7 @@ function ElegirFechaHora({ titulo, valor, onCambio, desde }: { titulo: string; v
   );
 }
 
-export function PasoCuando({ onSiguiente, onAtras }: { onSiguiente: () => void; onAtras: () => void }) {
+export function PasoCuando({ onSiguiente, onAtras, avisos, refresco }: Marco & { onSiguiente: () => void; onAtras: () => void }) {
   const { pedido, guardar } = usePedido();
   const [error, setError] = useState("");
   const dias = diasDeRenta(pedido.entrega, pedido.recogida);
@@ -318,14 +362,15 @@ export function PasoCuando({ onSiguiente, onAtras }: { onSiguiente: () => void; 
   }
 
   return (
-    <>
-      <Progreso paso={2} />
+    <Pantalla {...refresco} fijo={<NavPasos paso={2} onAtras={onAtras} onSiguiente={continuar} />}>
+      {avisos}
       <View style={{ gap: 8 }}>
         <Texto style={estilos.tituloPaso}>¿Cuándo los necesitas?</Texto>
         <Texto v="fino" style={estilos.subPaso}>
           Se cobra un día por cada 24 horas entre la entrega y la recogida.
         </Texto>
       </View>
+      {error ? <Aviso tono="mal" texto={error} /> : null}
       <Tarjeta style={{ gap: 20 }}>
         <ElegirFechaHora titulo="Entrega" valor={pedido.entrega} onCambio={(v) => set("entrega", v)} />
         <ElegirFechaHora
@@ -337,11 +382,8 @@ export function PasoCuando({ onSiguiente, onAtras }: { onSiguiente: () => void; 
         {dias > 0 ? (
           <Aviso tono="ok" texto={`${plural(dias, "día", "días")} de renta (${String(Math.round(horas * 10) / 10).replace(".", ",")} h)`} />
         ) : null}
-        {error ? <Aviso tono="mal" texto={error} /> : null}
       </Tarjeta>
-      <Boton titulo="Continuar" bloque onPress={continuar} />
-      <Boton titulo="Atrás" tipo="enlace" onPress={onAtras} style={{ alignSelf: "center" }} />
-    </>
+    </Pantalla>
   );
 }
 
@@ -354,7 +396,13 @@ function nombreCorto(n: string) {
   return base.length > 20 ? `${base.slice(0, 18).trim()}…` : base;
 }
 
-export function PasoDonde({ lugares, onSiguiente, onAtras }: { lugares: LugarPublico[]; onSiguiente: () => void; onAtras: () => void }) {
+export function PasoDonde({
+  lugares,
+  onSiguiente,
+  onAtras,
+  avisos,
+  refresco,
+}: Marco & { lugares: LugarPublico[]; onSiguiente: () => void; onAtras: () => void }) {
   const { pedido, guardar } = usePedido();
   const propio = pedido.lugar && !pedido.lugar.id ? pedido.lugar : null;
   const [modo, setModo] = useState<"lista" | "otro">(propio || !lugares.length ? "otro" : "lista");
@@ -383,14 +431,15 @@ export function PasoDonde({ lugares, onSiguiente, onAtras }: { lugares: LugarPub
   }
 
   return (
-    <>
-      <Progreso paso={3} />
+    <Pantalla {...refresco} fijo={<NavPasos paso={3} onAtras={onAtras} onSiguiente={continuar} textoSiguiente="Ver disponibilidad" />}>
+      {avisos}
       <View style={{ gap: 8 }}>
         <Texto style={estilos.tituloPaso}>¿Dónde es el show?</Texto>
         <Texto v="fino" style={estilos.subPaso}>
           Con el lugar calculamos la distancia a cada bodega y el costo de entrega.
         </Texto>
       </View>
+      {error ? <Aviso tono="mal" texto={error} /> : null}
       {lugares.length > 0 ? (
         <Segmentos
           opciones={[
@@ -469,14 +518,33 @@ export function PasoDonde({ lugares, onSiguiente, onAtras }: { lugares: LugarPub
         </Tarjeta>
       )}
 
-      {error ? <Aviso tono="mal" texto={error} /> : null}
-      <Boton titulo="Ver disponibilidad" bloque onPress={continuar} />
-      <Boton titulo="Atrás" tipo="enlace" onPress={onAtras} style={{ alignSelf: "center" }} />
-    </>
+    </Pantalla>
   );
 }
 
 const estilos = StyleSheet.create({
+  // Barra fija Atrás / Continuar
+  navAtras: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 40,
+    paddingLeft: 8,
+    paddingRight: 14,
+    borderRadius: radio.pildora,
+    backgroundColor: color.superficie,
+    borderWidth: 1,
+    borderColor: color.linea,
+  },
+  navSiguiente: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: radio.pildora,
+    backgroundColor: color.acento,
+  },
   // Paso 1
   segmento: { flex: 1, height: 4, borderRadius: 2, backgroundColor: color.lineaFuerte },
   tituloPaso: { fontFamily: fuente[600], fontSize: 30, lineHeight: 35, letterSpacing: -0.8, color: color.tinta },

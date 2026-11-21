@@ -38,7 +38,10 @@ Luego abre http://localhost:3000.
    `0004_entregas.sql`, `0005_bloqueos.sql`, `0006_chat.sql` (chat entre clientes y compañías, en tiempo real),
    `0007_entregas_completas.sql` (entregas como el prototipo y avisos de cada paso en el chat) y, solo para la BETA,
    `0008_beta_conexion.sql` (WhatsApp de las compañías, cotizaciones sin cobro y "Rentada / No se concretó") y
-   `0009_beta_resenas.sql` (reseñas de los clientes y respuesta de las compañías).
+   `0009_beta_resenas.sql` (reseñas de los clientes y respuesta de las compañías),
+   `0010_perfil_cliente.sql` (perfil del cliente: foto, a qué se dedica, dónde trabaja y descripción, que ve la
+   compañía en cada solicitud) y `0011_calificar_clientes.sql` (las compañías califican a quien les rentó y
+   reportan problemas con el equipo; el cliente puede responder).
 4. En **Authentication → URL Configuration**, pon `http://localhost:3000` como *Site URL* y agrega `http://localhost:3000/**` en *Redirect URLs*.
 5. Reinicia `npm run dev` para que tome las variables nuevas (en Windows PowerShell usa `npm.cmd run dev`).
 

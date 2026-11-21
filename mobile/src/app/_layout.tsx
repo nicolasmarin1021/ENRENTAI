@@ -64,6 +64,7 @@ export default function Raiz() {
               <Stack.Screen name="entrar" options={{ presentation: "modal", headerShown: false }} />
               <Stack.Screen name="como-funciona" options={{ title: "Cómo funciona" }} />
               <Stack.Screen name="registro" options={{ title: "Registrar compañía" }} />
+              <Stack.Screen name="perfil" options={{ title: "Tu perfil" }} />
               <Stack.Screen name="equipo-editar/[id]" options={{ title: "Equipo" }} />
             </Stack>
           </ThemeProvider>

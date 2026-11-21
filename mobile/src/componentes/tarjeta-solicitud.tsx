@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { fechaCO, pesos, plural, rangoCO } from "@/lib/formato";
+import { perfilDeSolicitud, type PerfilCliente } from "@/lib/perfil";
 import { ESTADOS_RESERVA, RENTADA, referencia, type ReservaFila } from "@/lib/reservas";
 import { mensajeError, supabase } from "@/lib/supabase";
 import { abrirWhatsApp } from "@/lib/whatsapp";
 import { Aviso, Boton, Campo, Etiqueta, Fila, Tarjeta, Texto } from "@/ui/base";
 import { Estrellas, IconoWhatsApp } from "@/ui/iconos";
 import { color, fuente, radio } from "@/tema";
+import { CalificarCliente } from "./calificar-cliente";
+import { TarjetaPerfil } from "./perfil-cliente";
 
 export type MiResena = { estrellas: number; comentario: string | null };
 
@@ -39,6 +42,19 @@ export function TarjetaSolicitud({
   const [detalle, setDetalle] = useState(false);
   const [error, setError] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const [perfil, setPerfil] = useState<PerfilCliente | null>(null);
+
+  // La compañía ve el perfil de quien le hizo la solicitud (si falta el SQL 0010, solo el nombre).
+  useEffect(() => {
+    if (vista !== "compania") return;
+    let vivo = true;
+    void perfilDeSolicitud(r.id).then((p) => {
+      if (vivo) setPerfil(p);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [r.id, vista]);
   const est = ESTADOS_RESERVA[r.estado] ?? { texto: r.estado, tono: "" as const };
   const futura = Date.parse(r.entrega) > ahora;
   const puedeCalificar = vista === "cliente" && !futura && RENTADA.includes(r.estado);
@@ -77,16 +93,31 @@ export function TarjetaSolicitud({
         </Texto>
       </View>
 
-      <View style={{ gap: 2 }}>
-        <Texto v="etiqueta">{vista === "compania" ? "Cliente" : "Compañía"}</Texto>
-        <Texto peso={600} style={{ fontSize: 16.5 }}>
-          {vista === "compania" ? r.cliente_nombre || "Cliente" : r.companias?.nombre}
-        </Texto>
-        <Texto v="fino">
-          Show en {r.lugar_nombre}
-          {vista === "compania" && r.distancia_km !== null ? ` · a ${String(Math.round(Number(r.distancia_km) * 10) / 10).replace(".", ",")} km de tu bodega` : ""}
-        </Texto>
-      </View>
+      {vista === "compania" ? (
+        // Quién te pide el equipo: su perfil (foto, a qué se dedica, dónde trabaja, rentas…).
+        <View style={{ gap: 8 }}>
+          <Texto v="etiqueta">Sobre el cliente</Texto>
+          {perfil ? (
+            <TarjetaPerfil p={perfil} />
+          ) : (
+            <Texto peso={600} style={{ fontSize: 16.5 }}>
+              {r.cliente_nombre || "Cliente"}
+            </Texto>
+          )}
+          <Texto v="fino">
+            Show en {r.lugar_nombre}
+            {r.distancia_km !== null ? ` · a ${String(Math.round(Number(r.distancia_km) * 10) / 10).replace(".", ",")} km de tu bodega` : ""}
+          </Texto>
+        </View>
+      ) : (
+        <View style={{ gap: 2 }}>
+          <Texto v="etiqueta">Compañía</Texto>
+          <Texto peso={600} style={{ fontSize: 16.5 }}>
+            {r.companias?.nombre}
+          </Texto>
+          <Texto v="fino">Show en {r.lugar_nombre}</Texto>
+        </View>
+      )}
 
       <View style={{ gap: 3 }}>
         {r.reserva_items.map((i, k) => (
@@ -141,6 +172,9 @@ export function TarjetaSolicitud({
         ) : null}
         {puedeCalificar ? <Calificar reservaId={r.id} compania={r.companias?.nombre ?? "la compañía"} inicial={resena} onListo={onCambio} /> : null}
         {vista === "compania" && r.estado === "pendiente" ? <Responder id={r.id} onListo={onCambio} /> : null}
+        {vista === "compania" && !futura && RENTADA.includes(r.estado) ? (
+          <CalificarCliente reservaId={r.id} nombre={perfil?.nombre || r.cliente_nombre || ""} onListo={onCambio} />
+        ) : null}
         {vista === "cliente" && futura && (r.estado === "pendiente" || r.estado === "confirmada") ? (
           <Boton titulo="Cancelar solicitud" tipo="peligro" chico deshabilitado={ocupado} onPress={cancelar} />
         ) : null}

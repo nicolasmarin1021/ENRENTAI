@@ -2,15 +2,18 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Avatar } from "@/componentes/perfil-cliente";
 import { ConCompania } from "@/componentes/sin-compania";
 import { TarjetaSolicitud } from "@/componentes/tarjeta-solicitud";
 import { hoyCO, ocupacionDia, sumarDias } from "@/lib/agenda";
 import { esRentada, movimientos, useDatosCompania, type DatosCompania } from "@/lib/datos-compania";
 import { fechaCO, iniciales, pesos, rangoCO } from "@/lib/formato";
-import { referencia, type ReservaFila } from "@/lib/reservas";
+import { promedioTexto, useCalificadas } from "@/lib/calificaciones";
+import { DIAS_PARA_CALIFICAR, lineaTrabajo, usePerfilesDeSolicitudes, type PerfilCliente } from "@/lib/perfil";
+import { referencia, RENTADA, type ReservaFila } from "@/lib/reservas";
 import { useSesion, type MiCompania } from "@/lib/sesion";
 import { mensajeError, supabase } from "@/lib/supabase";
-import { Aviso, Boton, Campo, Cargando, Encabezado, Pantalla, Texto } from "@/ui/base";
+import { Aviso, Boton, Campo, Cargando, Encabezado, Etiqueta, Pantalla, Texto } from "@/ui/base";
 import { Estrellas, Icono } from "@/ui/iconos";
 import { Ventana } from "@/ui/ventana";
 import { color, fuente, radio } from "@/tema";
@@ -27,11 +30,30 @@ export default function Panel() {
 function PanelCompania({ cid }: { cid: string }) {
   const { compania } = useSesion();
   const datos = useDatosCompania(cid);
-  return <PanelVista compania={compania} {...datos} />;
+  // Qué solicitudes ya calificó la compañía (para marcar las que están por calificar).
+  const { calificadas, recargarCalificadas } = useCalificadas(cid);
+  const [version, setVersion] = useState(0);
+  // Foto, nombre, dónde trabaja y calificaciones de quien pide cada solicitud (de su perfil).
+  const perfiles = usePerfilesDeSolicitudes(datos.reservas, datos.ahora, version);
+  return (
+    <PanelVista
+      compania={compania}
+      perfiles={perfiles}
+      calificadas={calificadas}
+      {...datos}
+      recargar={() => {
+        recargarCalificadas();
+        setVersion((v) => v + 1);
+        return datos.recargar();
+      }}
+    />
+  );
 }
 
 type PropsVista = DatosCompania & {
   compania: MiCompania | null;
+  perfiles: Record<string, PerfilCliente>; // por id de solicitud
+  calificadas: string[] | null; // null = falta el SQL 0011
   cargando: boolean;
   error: string;
   recargar: () => void | Promise<void>;
@@ -39,13 +61,22 @@ type PropsVista = DatosCompania & {
 };
 
 // Solo dibuja (los datos los trae PanelCompania).
-export function PanelVista({ compania, equipos, reservas, bloqueos, resenas, cargando, error, recargar, ahora }: PropsVista) {
+export function PanelVista({ compania, perfiles, calificadas, equipos, reservas, bloqueos, resenas, cargando, error, recargar, ahora }: PropsVista) {
   const [elegida, setElegida] = useState<Pestana | null>(null);
   const [abierta, setAbierta] = useState<ReservaFila | null>(null);
 
   const vigente = (r: ReservaFila) => Date.parse(r.recogida) >= ahora;
   const pendientes = reservas.filter((r) => r.estado === "pendiente" && vigente(r));
   const rentadas = reservas.filter((r) => esRentada(r) && vigente(r));
+  // Las rentadas que ya terminaron (últimos 60 días), las más recientes primero: para calificar al cliente.
+  const limite = ahora - DIAS_PARA_CALIFICAR * 86400000;
+  const terminadas = reservas
+    .filter((r) => RENTADA.includes(r.estado) && !vigente(r) && Date.parse(r.recogida) >= limite)
+    .sort((a, b) => b.recogida.localeCompare(a.recogida));
+  // Por calificar: rentadas cuya entrega ya pasó y que la compañía no ha calificado.
+  const estadoCalif = (r: ReservaFila): "por" | "hecha" | null =>
+    calificadas === null || !RENTADA.includes(r.estado) || Date.parse(r.entrega) > ahora ? null : calificadas.includes(r.id) ? "hecha" : "por";
+  const porCalificar = [...rentadas, ...terminadas].filter((r) => estadoCalif(r) === "por").length;
   const pestana: Pestana = elegida ?? (pendientes.length ? "pendientes" : "rentadas");
 
   // Indicadores
@@ -87,8 +118,22 @@ export function PanelVista({ compania, equipos, reservas, bloqueos, resenas, car
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <Icono n={proxima.modalidad === "entrega" ? "camion" : "bodega"} tam={16} tinta="rgba(255,255,255,0.85)" />
                 <Texto v="fino" tono="rgba(255,255,255,0.85)" numberOfLines={1} style={{ flex: 1 }}>
-                  {proxima.modalidad === "entrega" ? `Entrega en ${proxima.lugar_nombre}` : "Lo retiran en tu bodega"} · {proxima.cliente_nombre || "Cliente"}
+                  {proxima.modalidad === "entrega" ? `Entrega en ${proxima.lugar_nombre}` : "Lo retiran en tu bodega"}
                 </Texto>
+              </View>
+              {/* Quién la pidió */}
+              <View style={estilos.proximaCliente}>
+                <Avatar nombre={perfiles[proxima.id]?.nombre || proxima.cliente_nombre || "Cliente"} foto={perfiles[proxima.id]?.foto ?? null} tam={32} />
+                <View style={{ flex: 1 }}>
+                  <Texto peso={600} tono="#FFFFFF" numberOfLines={1} style={{ fontSize: 14.5 }}>
+                    {perfiles[proxima.id]?.nombre || proxima.cliente_nombre || "Cliente"}
+                  </Texto>
+                  {lineaTrabajo(perfiles[proxima.id]) ? (
+                    <Texto v="fino" tono="rgba(255,255,255,0.72)" numberOfLines={1}>
+                      {lineaTrabajo(perfiles[proxima.id])}
+                    </Texto>
+                  ) : null}
+                </View>
               </View>
             </Pressable>
           ) : (
@@ -112,7 +157,7 @@ export function PanelVista({ compania, equipos, reservas, bloqueos, resenas, car
           {/* Una lista a la vez */}
           <View style={estilos.pestanas} accessibilityRole="tablist">
             <PestanaBoton texto="Pendientes" cuenta={pendientes.length} activa={pestana === "pendientes"} alerta onPress={() => setElegida("pendientes")} />
-            <PestanaBoton texto="Rentadas" cuenta={rentadas.length} activa={pestana === "rentadas"} onPress={() => setElegida("rentadas")} />
+            <PestanaBoton texto="Rentadas" cuenta={rentadas.length} activa={pestana === "rentadas"} punto={porCalificar > 0} onPress={() => setElegida("rentadas")} />
             <PestanaBoton texto="Reseñas" cuenta={resenas.length} activa={pestana === "resenas"} onPress={() => setElegida("resenas")} />
           </View>
 
@@ -126,20 +171,49 @@ export function PanelVista({ compania, equipos, reservas, bloqueos, resenas, car
             ) : (
               <Vacio texto="Cuando tus clientes te califiquen, sus reseñas aparecen aquí y puedes responderlas." />
             )
-          ) : (pestana === "pendientes" ? pendientes : rentadas).length ? (
-            <View style={estilos.lista}>
-              {(pestana === "pendientes" ? pendientes : rentadas).map((r, i) => (
-                <FilaSolicitud key={r.id} r={r} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />
-              ))}
-            </View>
+          ) : pestana === "pendientes" ? (
+            pendientes.length ? (
+              <View style={estilos.lista}>
+                {pendientes.map((r, i) => (
+                  <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />
+                ))}
+              </View>
+            ) : (
+              <Vacio texto="No tienes solicitudes por confirmar. Cuando un cliente te pida una cotización, aparece aquí y te escribe por WhatsApp." />
+            )
           ) : (
-            <Vacio
-              texto={
-                pestana === "pendientes"
-                  ? "No tienes solicitudes por confirmar. Cuando un cliente te pida una cotización, aparece aquí y te escribe por WhatsApp."
-                  : "Aquí verás las solicitudes que marcaste como rentadas hasta su fecha de recogida."
-              }
-            />
+            <>
+              {porCalificar > 0 ? (
+                <View style={estilos.porCalificar}>
+                  <Icono n="escudo" tam={18} tinta={color.acento} />
+                  <Texto v="fino" tono={color.tinta} style={{ flex: 1 }}>
+                    {porCalificar === 1 ? "Tienes 1 cliente por calificar." : `Tienes ${porCalificar} clientes por calificar.`} Tu calificación (y si algo pasó con el equipo) ayuda a
+                    otras compañías a saber a quién le rentan.
+                  </Texto>
+                </View>
+              ) : null}
+              {rentadas.length ? (
+                <View style={estilos.lista}>
+                  {rentadas.map((r, i) => (
+                    <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} calif={estadoCalif(r)} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />
+                  ))}
+                </View>
+              ) : (
+                <Vacio texto={terminadas.length ? "No tienes rentas en curso." : "Aquí verás las solicitudes que marcaste como rentadas hasta su fecha de recogida."} />
+              )}
+              {terminadas.length ? (
+                <>
+                  <Texto v="etiqueta" style={{ marginTop: 4 }}>
+                    Terminadas · últimos {DIAS_PARA_CALIFICAR} días
+                  </Texto>
+                  <View style={estilos.lista}>
+                    {terminadas.map((r, i) => (
+                      <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} calif={estadoCalif(r)} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+            </>
           )}
         </>
       )}
@@ -190,9 +264,29 @@ function Indicador({ valor, texto, onPress }: { valor: string; texto: string; on
   );
 }
 
-function PestanaBoton({ texto, cuenta, activa, alerta = false, onPress }: { texto: string; cuenta: number; activa: boolean; alerta?: boolean; onPress: () => void }) {
+function PestanaBoton({
+  texto,
+  cuenta,
+  activa,
+  alerta = false,
+  punto = false,
+  onPress,
+}: {
+  texto: string;
+  cuenta: number;
+  activa: boolean;
+  alerta?: boolean;
+  punto?: boolean; // algo por hacer (p. ej. clientes por calificar)
+  onPress: () => void;
+}) {
   return (
-    <Pressable onPress={onPress} style={[estilos.pestana, activa && estilos.pestanaActiva]} accessibilityRole="tab" accessibilityState={{ selected: activa }}>
+    <Pressable
+      onPress={onPress}
+      style={[estilos.pestana, activa && estilos.pestanaActiva]}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: activa }}
+      accessibilityHint={punto ? "Tienes clientes por calificar" : undefined}
+    >
       <Texto peso={600} style={{ fontSize: 13.5 }} tono={activa ? color.tinta : color.suave} numberOfLines={1}>
         {texto}
       </Texto>
@@ -201,6 +295,7 @@ function PestanaBoton({ texto, cuenta, activa, alerta = false, onPress }: { text
           <Text style={estilos.cuentaTexto}>{cuenta}</Text>
         </View>
       ) : null}
+      {punto ? <View style={estilos.punto} /> : null}
     </Pressable>
   );
 }
@@ -216,7 +311,24 @@ function Vacio({ texto }: { texto: string }) {
 }
 
 // Una solicitud en una línea; las por confirmar traen sus dos acciones a la mano.
-function FilaSolicitud({ r, primera, onAbrir, onListo }: { r: ReservaFila; primera: boolean; onAbrir: () => void; onListo: () => void }) {
+function FilaSolicitud({
+  r,
+  perfil,
+  calif = null,
+  primera,
+  onAbrir,
+  onListo,
+}: {
+  r: ReservaFila;
+  perfil?: PerfilCliente;
+  calif?: "por" | "hecha" | null; // si ya se puede calificar al cliente, y si ya lo calificaste
+  primera: boolean;
+  onAbrir: () => void;
+  onListo: () => void;
+}) {
+  const nombre = perfil?.nombre || r.cliente_nombre || "Cliente";
+  const trabajo = lineaTrabajo(perfil);
+  const resumen = perfil?.calificacion;
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState("");
   const pendiente = r.estado === "pendiente";
@@ -234,24 +346,48 @@ function FilaSolicitud({ r, primera, onAbrir, onListo }: { r: ReservaFila; prime
   return (
     <View style={[estilos.solicitud, !primera && estilos.linea]}>
       <Pressable onPress={onAbrir} style={({ pressed }) => [estilos.fila, pressed && { opacity: 0.6 }]} accessibilityRole="button" accessibilityLabel={`Ver la solicitud ${r.codigo}`}>
-        <View style={estilos.avatar}>
-          <Text style={estilos.avatarTexto}>{iniciales(r.cliente_nombre || "Cliente")}</Text>
-        </View>
+        <Avatar nombre={nombre} foto={perfil?.foto ?? null} tam={48} />
         <View style={{ flex: 1, gap: 2 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
             <Texto peso={600} numberOfLines={1} style={{ flex: 1 }}>
-              {r.cliente_nombre || "Cliente"}
+              {nombre}
             </Texto>
             <Texto peso={600} style={{ fontSize: 14 }}>
               {pesos(referencia(r))}
             </Texto>
           </View>
+          {trabajo ? (
+            <Texto v="fino" peso={500} tono={color.acento} numberOfLines={1}>
+              {trabajo}
+            </Texto>
+          ) : null}
+          {/* Lo que dicen otras compañías de este cliente */}
+          {resumen && resumen.total > 0 ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Texto v="fino" peso={600} tono={color.tinta}>
+                ★ {promedioTexto(resumen.promedio)}{" "}
+                <Texto v="fino">
+                  · {resumen.total} {resumen.total === 1 ? "calificación" : "calificaciones"}
+                </Texto>
+              </Texto>
+              {resumen.problemas > 0 ? (
+                <Texto v="fino" peso={600} tono={color.mal}>
+                  ⚠ {resumen.problemas} {resumen.problemas === 1 ? "reporte" : "reportes"}
+                </Texto>
+              ) : null}
+            </View>
+          ) : null}
           <Texto numberOfLines={1} style={{ fontSize: 14.5 }}>
             {r.reserva_items.map((i) => `${i.cantidad}× ${i.nombre}`).join(", ")}
           </Texto>
           <Texto v="fino" numberOfLines={1}>
             {rangoCO(r.entrega, r.recogida)} · {r.modalidad === "entrega" ? r.lugar_nombre : "retiro en bodega"}
           </Texto>
+          {calif ? (
+            <View style={{ flexDirection: "row", marginTop: 4 }}>
+              <Etiqueta texto={calif === "por" ? "Por calificar" : "✓ Calificado"} tono={calif === "por" ? "aviso" : "ok"} />
+            </View>
+          ) : null}
         </View>
         <Icono n="flecha" tam={16} tinta={color.suave} />
       </Pressable>
@@ -323,6 +459,15 @@ function FilaResena({ r, primera, onListo }: { r: DatosCompania["resenas"][numbe
 
 const estilos = StyleSheet.create({
   proxima: { backgroundColor: color.tinta, borderRadius: radio.lg, padding: 18, gap: 6 },
+  proximaCliente: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 6,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.14)",
+  },
   sinProxima: {
     flexDirection: "row",
     alignItems: "center",
@@ -349,6 +494,8 @@ const estilos = StyleSheet.create({
   },
   cuenta: { minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 5, backgroundColor: color.suave, alignItems: "center", justifyContent: "center" },
   cuentaTexto: { fontFamily: fuente[700], fontSize: 11, color: "#FFFFFF" },
+  punto: { position: "absolute", top: 5, right: 7, width: 8, height: 8, borderRadius: 4, backgroundColor: color.coral, borderWidth: 1.5, borderColor: color.superficie },
+  porCalificar: { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: color.acentoSuave, borderRadius: radio.lg, padding: 14 },
   lista: { backgroundColor: color.superficie, borderRadius: radio.lg, borderWidth: 1, borderColor: color.linea, overflow: "hidden" },
   solicitud: { padding: 14, gap: 10 },
   linea: { borderTopWidth: 1, borderTopColor: color.linea },
