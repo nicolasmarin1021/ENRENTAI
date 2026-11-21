@@ -7,26 +7,24 @@ import { color } from "@/tema";
 
 const CORAZON = "M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z";
 
-// Botón ♡ para guardar un equipo o una compañía (redondo y blanco, para ir sobre las fotos).
+// Botón ♡ para guardar un equipo en Guardados (redondo y blanco, para ir sobre las fotos).
 export function Corazon({
-  tipo,
   id,
   nombre,
   tam = 34,
   plano = false,
 }: {
-  tipo: "equipos" | "companias";
-  id: string;
+  id: string; // id del equipo
   nombre: string;
   tam?: number;
   plano?: boolean; // sin fondo blanco (sobre fondos claros)
 }) {
   const { guardado, alternar } = useGuardados();
   const [escala] = useState(() => new Animated.Value(1));
-  const activo = guardado(tipo, id);
+  const activo = guardado(id);
 
   function tocar() {
-    alternar(tipo, id);
+    alternar(id);
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     // Pequeño "latido" al tocar.
     Animated.sequence([

@@ -13,7 +13,6 @@ import { usePedido } from "@/lib/pedido";
 import { estimar, referenciaPara, textoRef } from "@/lib/referencias";
 import { supabase } from "@/lib/supabase";
 import { Texto } from "@/ui/base";
-import { Corazon } from "@/ui/corazon";
 import { Estrellas, Icono, IconoCategoria } from "@/ui/iconos";
 import { color, fuente, margen, radio } from "@/tema";
 
@@ -360,7 +359,6 @@ export default function Compania() {
           <Pressable onPress={compartir} style={estilos.redondo} accessibilityRole="button" accessibilityLabel="Compartir">
             <Icono n="compartir" tam={19} grosor={1.9} />
           </Pressable>
-          <Corazon tipo="companias" id={c.id} nombre={c.nombre} tam={44} />
         </View>
       </View>
 

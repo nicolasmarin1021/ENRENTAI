@@ -317,7 +317,7 @@ function FilaExplorar({
             )}
           </View>
         </Pressable>
-        <Corazon tipo="equipos" id={e.id} nombre={e.nombre} tam={32} plano />
+        <Corazon id={e.id} nombre={e.nombre} tam={32} plano />
       </View>
     </>
   );

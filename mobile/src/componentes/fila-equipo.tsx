@@ -42,7 +42,7 @@ export function FilaEquipo({ e }: { e: EquipoPublico }) {
           </Texto>
         </View>
       </Pressable>
-      <Corazon tipo="equipos" id={e.id} nombre={e.nombre} tam={32} plano />
+      <Corazon id={e.id} nombre={e.nombre} tam={32} plano />
       </View>
       <View style={estilos.accion}>
         {n > 0 ? (

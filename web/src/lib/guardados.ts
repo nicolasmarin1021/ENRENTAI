@@ -2,15 +2,12 @@
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
-// Guardados (♡): equipos y compañías que la persona marca, como las listas de favoritos de Airbnb.
-// Igual que en la app (mobile/src/lib/guardados.tsx): se guardan en este navegador y no necesitan
-// cuenta. Si se abren varias pestañas, todas ven los mismos guardados.
+// Guardados (♡): los EQUIPOS que la persona quiere rentar (no las compañías), como las listas de
+// favoritos de Airbnb. Igual que en la app (mobile/src/lib/guardados.tsx): se guardan en este
+// navegador y no necesitan cuenta. Si se abren varias pestañas, todas ven los mismos guardados.
 
-export type ListaGuardados = { equipos: string[]; companias: string[] };
-export type TipoGuardado = keyof ListaGuardados;
-
-const CLAVE = "enrenta:guardados:v1";
-const VACIA: ListaGuardados = { equipos: [], companias: [] };
+const CLAVE = "enrenta:guardados:v1"; // { equipos: [...] } (las compañías de la versión anterior se ignoran)
+const VACIA: string[] = [];
 const oyentes = new Set<() => void>();
 let memoria: string | null | undefined; // undefined = aún no se ha leído
 
@@ -40,13 +37,12 @@ function suscribir(aviso: () => void) {
   };
 }
 
-// Solo listas de textos: si lo guardado está dañado, se ignora.
-const ids = (v: unknown) => (Array.isArray(v) ? v.filter((i): i is string => typeof i === "string") : []);
-function interpretar(crudo: string | null): ListaGuardados {
+// Solo una lista de textos: si lo guardado está dañado, se ignora.
+function interpretar(crudo: string | null): string[] {
   if (!crudo) return VACIA;
   try {
-    const x = JSON.parse(crudo) as Partial<ListaGuardados> | null;
-    return { equipos: ids(x?.equipos), companias: ids(x?.companias) };
+    const x = JSON.parse(crudo) as { equipos?: unknown } | null;
+    return Array.isArray(x?.equipos) ? x.equipos.filter((i): i is string => typeof i === "string") : VACIA;
   } catch {
     return VACIA;
   }
@@ -54,14 +50,13 @@ function interpretar(crudo: string | null): ListaGuardados {
 
 export function useGuardados() {
   const crudo = useSyncExternalStore(suscribir, leer, () => null);
-  const lista = useMemo(() => interpretar(crudo), [crudo]);
+  const equipos = useMemo(() => interpretar(crudo), [crudo]);
 
-  const alternar = useCallback((tipo: TipoGuardado, id: string) => {
+  const alternar = useCallback((id: string) => {
     const actual = interpretar(leer());
-    const ya = actual[tipo].includes(id);
     // Lo último que se guarda queda primero.
-    const siguiente = { ...actual, [tipo]: ya ? actual[tipo].filter((x) => x !== id) : [id, ...actual[tipo]] };
-    memoria = JSON.stringify(siguiente);
+    const siguiente = actual.includes(id) ? actual.filter((x) => x !== id) : [id, ...actual];
+    memoria = JSON.stringify({ equipos: siguiente });
     try {
       localStorage.setItem(CLAVE, memoria);
     } catch {
@@ -70,6 +65,6 @@ export function useGuardados() {
     oyentes.forEach((f) => f());
   }, []);
 
-  const guardado = useCallback((tipo: TipoGuardado, id: string) => lista[tipo].includes(id), [lista]);
-  return { lista, guardado, alternar, total: lista.equipos.length + lista.companias.length };
+  const guardado = useCallback((id: string) => equipos.includes(id), [equipos]);
+  return { equipos, guardado, alternar, total: equipos.length };
 }

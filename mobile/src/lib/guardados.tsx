@@ -1,49 +1,44 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, use, useCallback, useEffect, useState, type ReactNode } from "react";
 
-// Guardados (♡), como las listas de favoritos de Airbnb: equipos y compañías que la persona marca.
-// Se guardan en el celular; no necesitan cuenta ni cambios en la base de datos.
+// Guardados (♡), como las listas de favoritos de Airbnb: los EQUIPOS que la persona quiere rentar
+// (no las compañías). Se guardan en el celular; no necesitan cuenta ni cambios en la base de datos.
+// Igual que en la web (web/src/lib/guardados.ts).
 
-type Lista = { equipos: string[]; companias: string[] };
-type Tipo = keyof Lista;
+const CLAVE = "enrenta:guardados:v1"; // { equipos: [...] } (las compañías de la versión anterior se ignoran)
 
-const CLAVE = "enrenta:guardados:v1";
-const VACIA: Lista = { equipos: [], companias: [] };
-
-const Contexto = createContext<{ lista: Lista; guardado: (tipo: Tipo, id: string) => boolean; alternar: (tipo: Tipo, id: string) => void }>({
-  lista: VACIA,
+const Contexto = createContext<{ equipos: string[]; guardado: (id: string) => boolean; alternar: (id: string) => void }>({
+  equipos: [],
   guardado: () => false,
   alternar: () => {},
 });
 
 export function GuardadosProvider({ children }: { children: ReactNode }) {
-  const [lista, setLista] = useState<Lista>(VACIA);
+  const [equipos, setEquipos] = useState<string[]>([]);
 
   useEffect(() => {
     AsyncStorage.getItem(CLAVE)
       .then((crudo) => {
         if (!crudo) return;
-        // Solo listas de textos (si lo guardado está dañado, se ignora).
-        const x = JSON.parse(crudo) as Partial<Lista> | null;
-        const ids = (v: unknown) => (Array.isArray(v) ? v.filter((i): i is string => typeof i === "string") : []);
-        setLista({ equipos: ids(x?.equipos), companias: ids(x?.companias) });
+        // Solo una lista de textos (si lo guardado está dañado, se ignora).
+        const x = JSON.parse(crudo) as { equipos?: unknown } | null;
+        if (Array.isArray(x?.equipos)) setEquipos(x.equipos.filter((i): i is string => typeof i === "string"));
       })
       .catch(() => {});
   }, []);
 
-  const alternar = useCallback((tipo: Tipo, id: string) => {
-    setLista((actual) => {
-      const ya = actual[tipo].includes(id);
+  const alternar = useCallback((id: string) => {
+    setEquipos((actual) => {
       // Lo último que se guarda queda primero.
-      const siguiente = { ...actual, [tipo]: ya ? actual[tipo].filter((x) => x !== id) : [id, ...actual[tipo]] };
-      AsyncStorage.setItem(CLAVE, JSON.stringify(siguiente)).catch(() => {});
+      const siguiente = actual.includes(id) ? actual.filter((x) => x !== id) : [id, ...actual];
+      AsyncStorage.setItem(CLAVE, JSON.stringify({ equipos: siguiente })).catch(() => {});
       return siguiente;
     });
   }, []);
 
-  const guardado = (tipo: Tipo, id: string) => lista[tipo].includes(id);
+  const guardado = (id: string) => equipos.includes(id);
 
-  return <Contexto value={{ lista, guardado, alternar }}>{children}</Contexto>;
+  return <Contexto value={{ equipos, guardado, alternar }}>{children}</Contexto>;
 }
 
 export const useGuardados = () => use(Contexto);

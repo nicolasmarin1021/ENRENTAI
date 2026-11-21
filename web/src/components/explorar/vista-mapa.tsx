@@ -368,7 +368,6 @@ function VentanaCompania({
             </Link>
           </span>
         </div>
-        <Corazon tipo="companias" id={c.id} nombre={c.nombre} plano />
         <button type="button" className="cerrar" onClick={onCerrar} aria-label="Cerrar">
           ×
         </button>
@@ -454,32 +453,35 @@ function FilaEquipo({
 
   return (
     <li className={`pi ${abierta ? "open" : ""} ${libres === 0 ? "out" : ""}`}>
-      <button type="button" className="pi-row" aria-expanded={abierta} onClick={() => setAbierta((a) => !a)}>
-        <span className="pi-ico">
-          <IconoCategoria cat={e.categoria_id} size={19} />
-        </span>
-        <span>
-          <span className="pi-name">{e.nombre}</span>
-          <span className="pi-sub">
-            <span>
-              <b>{libres}</b> de {e.unidades} libres
-            </span>
-            {e.banda_nombre && (
-              <span>
-                {e.banda_nombre}
-                {e.banda_min_mhz !== null && e.banda_max_mhz !== null
-                  ? ` · ${String(e.banda_min_mhz).replace(".", ",")}–${String(e.banda_max_mhz).replace(".", ",")} MHz`
-                  : ""}
-              </span>
-            )}
-            {enRider > 0 && <span className="tag ok sm">{enRider} en tu rider</span>}
+      <div className="pi-linea">
+        <button type="button" className="pi-row" aria-expanded={abierta} onClick={() => setAbierta((a) => !a)}>
+          <span className="pi-ico">
+            <IconoCategoria cat={e.categoria_id} size={19} />
           </span>
-        </span>
-        <span className="pi-price">
-          {pesos(e.precio_dia)}
-          <small>por día</small>
-        </span>
-      </button>
+          <span>
+            <span className="pi-name">{e.nombre}</span>
+            <span className="pi-sub">
+              <span>
+                <b>{libres}</b> de {e.unidades} libres
+              </span>
+              {e.banda_nombre && (
+                <span>
+                  {e.banda_nombre}
+                  {e.banda_min_mhz !== null && e.banda_max_mhz !== null
+                    ? ` · ${String(e.banda_min_mhz).replace(".", ",")}–${String(e.banda_max_mhz).replace(".", ",")} MHz`
+                    : ""}
+                </span>
+              )}
+              {enRider > 0 && <span className="tag ok sm">{enRider} en tu rider</span>}
+            </span>
+          </span>
+          <span className="pi-price">
+            {pesos(e.precio_dia)}
+            <small>por día</small>
+          </span>
+        </button>
+        <Corazon id={e.id} nombre={e.nombre} plano />
+      </div>
       {abierta && (
         <div className="pi-body">
           {libres === 0 ? (
@@ -573,7 +575,7 @@ export function FichaEquipo({
             </span>
             <h2 id="ficha-titulo">{e.nombre}</h2>
           </div>
-          <Corazon tipo="equipos" id={e.id} nombre={e.nombre} plano className="ficha-corazon" />
+          <Corazon id={e.id} nombre={e.nombre} plano className="ficha-corazon" />
           <button type="button" className="cerrar" onClick={() => ref.current?.close()} aria-label="Cerrar">
             ×
           </button>

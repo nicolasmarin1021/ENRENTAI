@@ -84,7 +84,6 @@ async function Contenido({ params }: Pick<PageProps<"/compania/[id]">, "params">
           </p>
         </div>
         <div className="row-actions">
-          <Corazon tipo="companias" id={c.id} nombre={c.nombre} />
           <Link href="/explorar" className="btn primary">
             Cotizar en Explorar
           </Link>
@@ -111,7 +110,7 @@ async function Contenido({ params }: Pick<PageProps<"/compania/[id]">, "params">
                       {pesos(e.precio_dia)} por día · {e.unidades} {e.unidades === 1 ? "unidad" : "unidades"}
                     </span>
                   </span>
-                  <Corazon tipo="equipos" id={e.id} nombre={e.nombre} plano />
+                  <Corazon id={e.id} nombre={e.nombre} plano />
                 </li>
               );
             })}

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { urlFoto, type CompaniaPublica } from "@/lib/catalogo";
 import { Texto } from "@/ui/base";
-import { Corazon } from "@/ui/corazon";
 import { Icono, IconoCategoria } from "@/ui/iconos";
 import { color, radio } from "@/tema";
 
@@ -67,7 +66,6 @@ export function TarjetaMapa({ d, ancho, onCerrar, flotante = false }: { d: Datos
           </View>
         ) : null}
         <View style={estilos.botones}>
-          <Corazon tipo="companias" id={d.c.id} nombre={d.c.nombre} />
           {onCerrar ? (
             <Pressable onPress={onCerrar} style={estilos.cerrar} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cerrar">
               <Icono n="cerrar" tam={16} grosor={2.2} />

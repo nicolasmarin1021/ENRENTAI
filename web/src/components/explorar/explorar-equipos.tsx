@@ -351,7 +351,7 @@ function FilaExplorar({
             {enRider > 0 && <span className="tag ok sm">{enRider} en tu rider</span>}
           </span>
         </button>
-        <Corazon tipo="equipos" id={e.id} nombre={e.nombre} plano />
+        <Corazon id={e.id} nombre={e.nombre} plano />
       </li>
     </>
   );
@@ -396,7 +396,6 @@ function VentanaExplorar({
             </Link>
           </span>
         </div>
-        <Corazon tipo="companias" id={c.id} nombre={c.nombre} plano />
         <button type="button" className="cerrar" onClick={onCerrar} aria-label="Cerrar">
           ×
         </button>
@@ -413,22 +412,25 @@ function VentanaExplorar({
           const enRider = rider.enRider(e);
           return (
             <li key={e.id} className={`pi ${conFechas && libres === 0 ? "out" : ""}`}>
-              <button type="button" className="pi-row" onClick={() => onFicha(e)}>
-                <span className="pi-ico">
-                  <IconoCategoria cat={e.categoria_id} size={19} />
-                </span>
-                <span>
-                  <span className="pi-name">{e.nombre}</span>
-                  <span className="pi-sub">
-                    <span>{conFechas ? `${libres} de ${e.unidades} libres` : plural(e.unidades, "unidad", "unidades")}</span>
-                    {enRider > 0 && <span className="tag ok sm">{enRider} en tu rider</span>}
+              <div className="pi-linea">
+                <button type="button" className="pi-row" onClick={() => onFicha(e)}>
+                  <span className="pi-ico">
+                    <IconoCategoria cat={e.categoria_id} size={19} />
                   </span>
-                </span>
-                <span className="pi-price">
-                  {pesos(e.precio_dia)}
-                  <small>por día</small>
-                </span>
-              </button>
+                  <span>
+                    <span className="pi-name">{e.nombre}</span>
+                    <span className="pi-sub">
+                      <span>{conFechas ? `${libres} de ${e.unidades} libres` : plural(e.unidades, "unidad", "unidades")}</span>
+                      {enRider > 0 && <span className="tag ok sm">{enRider} en tu rider</span>}
+                    </span>
+                  </span>
+                  <span className="pi-price">
+                    {pesos(e.precio_dia)}
+                    <small>por día</small>
+                  </span>
+                </button>
+                <Corazon id={e.id} nombre={e.nombre} plano />
+              </div>
             </li>
           );
         })}

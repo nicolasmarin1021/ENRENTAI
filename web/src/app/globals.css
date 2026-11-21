@@ -1238,6 +1238,13 @@ a.foto { display: block; }
 .corazon:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @keyframes latido { 0% { transform: scale(1); } 45% { transform: scale(1.25); } 100% { transform: scale(1); } }
 .ventana-hd .corazon { margin-left: auto; }
+/* Fila de equipo en las ventanas del mapa, con su ♡ al lado */
+.pi-linea { display: flex; align-items: center; }
+.pi-linea > .pi-row { flex: 1; min-width: 0; }
+.pi-linea > .corazon { margin-right: 8px; }
+.pi-linea:hover, .pi.open .pi-linea { background: var(--surface-2); }
+.pi-linea .pi-row:hover, .pi.open .pi-linea .pi-row { background: none; }
+.pi-linea:hover .pi-ico { background: var(--surface); }
 .perfil-equipos li > span:not(.sin-foto) { flex: 1; min-width: 0; }
 
 /* Explorar: lista (components/explorar/explorar-equipos.tsx) */
@@ -1297,11 +1304,6 @@ a.foto { display: block; }
 .g-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s; }
 .g-toque:hover .g-foto img { transform: scale(1.03); }
 .g-corazon { position: absolute; top: 10px; right: 10px; }
-.g-companias { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.g-compania { display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: var(--r); background: var(--surface); box-shadow: var(--shadow); }
-.g-compania-toque { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; }
-.g-compania-toque .eq-thumb { width: 64px; height: 64px; }
-.g-compania-toque:hover b { color: var(--accent); }
 
 /* Verificación de identidad (components/verificacion-vista.tsx y admin-verificaciones.tsx) */
 .verif { display: grid; gap: 18px; }

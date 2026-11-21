@@ -2,31 +2,32 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { urlFoto, useCatalogo, type CompaniaPublica, type EquipoPublico } from "@/lib/catalogo";
-import { pesos, plural } from "@/lib/formato";
+import { pesos } from "@/lib/formato";
 import { useGuardados } from "@/lib/guardados";
-import { Boton, Encabezado, Pantalla, Tarjeta, Texto } from "@/ui/base";
+import { Aviso, Boton, Encabezado, Pantalla, Tarjeta, Texto } from "@/ui/base";
 import { Corazon } from "@/ui/corazon";
 import { Icono, IconoCategoria } from "@/ui/iconos";
 import { color, margen, radio } from "@/tema";
 
-// Guardados (♡): los equipos y las compañías que la persona marcó, como las listas de Airbnb.
+// Guardados (♡): los equipos que la persona quiere rentar, como las listas de Airbnb.
 // El ♡ va al lado del botón de cada tarjeta (no dentro), para que cada toque haga una sola cosa.
 export default function Guardados() {
-  const { lista } = useGuardados();
-  const { catalogo } = useCatalogo();
+  const { equipos: ids, alternar } = useGuardados();
+  const { catalogo, cargando } = useCatalogo();
   const { width } = useWindowDimensions();
   const ancho = Math.floor((Math.min(width, 640) - margen * 2 - 12) / 2);
 
   const todos = catalogo.companias.flatMap((c) => c.equipos.map((e) => ({ e, c })));
-  const equipos = lista.equipos
+  const equipos = ids
     .map((id) => todos.find((x) => x.e.id === id))
     .filter((x): x is { e: EquipoPublico; c: CompaniaPublica } => Boolean(x));
-  const companias = lista.companias.map((id) => catalogo.companias.find((c) => c.id === id)).filter((c): c is CompaniaPublica => Boolean(c));
-  const vacio = !equipos.length && !companias.length;
+  // Lo que se guardó y ya no está publicado (la compañía lo pausó o lo quitó).
+  const perdidos = cargando || !todos.length ? [] : ids.filter((id) => !todos.some((x) => x.e.id === id));
+  const vacio = !equipos.length;
 
   return (
     <Pantalla>
-      <Encabezado titulo="Guardados" sub={vacio ? undefined : "Lo que marcaste con ♡ para tus próximos shows."} />
+      <Encabezado titulo="Guardados" sub={vacio ? undefined : "Los equipos que marcaste con ♡ para tus próximos shows."} />
 
       {vacio ? (
         <Tarjeta style={{ alignItems: "center", paddingVertical: 32, gap: 14 }}>
@@ -37,13 +38,22 @@ export default function Guardados() {
             Aún no tienes guardados
           </Texto>
           <Texto v="fino" style={{ textAlign: "center", fontSize: 14.5 }}>
-            Toca ♡ en un equipo o en una compañía para tenerlos a mano aquí cuando armes tu próximo rider.
+            Toca ♡ en un equipo que te interese rentar para tenerlo a mano aquí cuando armes tu próximo rider.
           </Texto>
           <Boton
             titulo="Explorar equipos"
             onPress={() => router.navigate({ pathname: "/buscar", params: { vista: "explorar", n: String(Date.now()) } })}
           />
         </Tarjeta>
+      ) : null}
+
+      {perdidos.length ? (
+        <Aviso
+          tono="aviso"
+          texto={perdidos.length === 1 ? "Un equipo que guardaste ya no está publicado." : `${perdidos.length} equipos que guardaste ya no están publicados.`}
+        >
+          <Boton titulo="Quitarlos de Guardados" chico tipo="secundario" onPress={() => perdidos.forEach(alternar)} />
+        </Aviso>
       ) : null}
 
       {equipos.length ? (
@@ -79,7 +89,7 @@ export default function Guardados() {
                   </Texto>
                 </Pressable>
                 <View style={estilos.corazon}>
-                  <Corazon tipo="equipos" id={e.id} nombre={e.nombre} tam={32} />
+                  <Corazon id={e.id} nombre={e.nombre} tam={32} />
                 </View>
               </View>
             ))}
@@ -87,42 +97,6 @@ export default function Guardados() {
         </>
       ) : null}
 
-      {companias.length ? (
-        <>
-          <Texto v="subtitulo">Compañías · {companias.length}</Texto>
-          {companias.map((c) => {
-            const portada = c.equipos.find((e) => e.fotos[0])?.fotos[0];
-            return (
-              <View key={c.id} style={estilos.compania}>
-                <Pressable
-                  onPress={() => router.push({ pathname: "/compania/[id]", params: { id: c.id } })}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Ver ${c.nombre}`}
-                  style={({ pressed }) => [estilos.companiaBoton, pressed && { opacity: 0.7 }]}
-                >
-                  <View style={estilos.miniatura}>
-                    {portada ? (
-                      <Image source={{ uri: urlFoto(portada) }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                    ) : (
-                      <IconoCategoria cat="mic" tam={26} tinta={color.suave} />
-                    )}
-                  </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Texto peso={600} numberOfLines={1}>
-                      {c.nombre}
-                    </Texto>
-                    <Texto v="fino" numberOfLines={1}>
-                      {c.resenas && c.resenas.total > 0 ? `★ ${c.resenas.promedio.toFixed(1).replace(".", ",")} · ` : ""}
-                      {c.zona ?? c.ciudad} · {plural(c.equipos.length, "equipo", "equipos")}
-                    </Texto>
-                  </View>
-                </Pressable>
-                <Corazon tipo="companias" id={c.id} nombre={c.nombre} tam={34} plano />
-              </View>
-            );
-          })}
-        </>
-      ) : null}
     </Pantalla>
   );
 }
@@ -132,27 +106,4 @@ const estilos = StyleSheet.create({
   rejilla: { flexDirection: "row", flexWrap: "wrap", gap: 12, rowGap: 20 },
   foto: { borderRadius: radio.lg, overflow: "hidden", backgroundColor: color.superficie2, alignItems: "center", justifyContent: "center" },
   corazon: { position: "absolute", top: 8, right: 8 },
-  compania: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 12,
-    borderRadius: radio.lg,
-    backgroundColor: color.superficie,
-    shadowColor: "#101828",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
-  },
-  companiaBoton: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
-  miniatura: {
-    width: 64,
-    height: 64,
-    borderRadius: radio.md,
-    overflow: "hidden",
-    backgroundColor: color.superficie2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });

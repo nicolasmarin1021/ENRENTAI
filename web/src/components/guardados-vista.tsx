@@ -12,15 +12,11 @@ import { useOcupadas } from "@/lib/disponibilidad";
 import { useGuardados } from "@/lib/guardados";
 import { pesos } from "@/lib/medellin";
 import { conCantidad, diasDeRenta, usePedido } from "@/lib/pedido";
-import { textoResumen } from "@/lib/resenas";
 
-const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
-
-// Guardados (♡): los equipos y las compañías que la persona marcó, como las listas de Airbnb
-// (igual que en la app). El ♡ va al lado de cada botón, no dentro, para que cada clic haga una
-// sola cosa.
+// Guardados (♡): los equipos que la persona quiere rentar, como las listas de Airbnb (igual que en
+// la app). El ♡ va al lado de cada botón, no dentro, para que cada clic haga una sola cosa.
 export function GuardadosVista({ catalogo, categorias }: { catalogo: Catalogo; categorias: Categoria[] }) {
-  const { lista, alternar } = useGuardados();
+  const { equipos: ids, alternar } = useGuardados();
   const [pedido, guardar] = usePedido();
   const [ficha, setFicha] = useState<EquipoPublico | null>(null);
   const [aviso, setAviso] = useState<{ n: number; texto: string } | null>(null);
@@ -44,20 +40,12 @@ export function GuardadosVista({ catalogo, categorias }: { catalogo: Catalogo; c
   };
 
   const todos = catalogo.companias.flatMap((c) => c.equipos.map((e) => ({ e, c })));
-  const equipos = lista.equipos
+  const equipos = ids
     .map((id) => todos.find((x) => x.e.id === id))
     .filter((x): x is { e: EquipoPublico; c: CompaniaPublica } => Boolean(x));
-  const companias = lista.companias
-    .map((id) => catalogo.companias.find((c) => c.id === id))
-    .filter((c): c is CompaniaPublica => Boolean(c));
-  // Lo que se guardó y ya no está publicado (lo pausaron o lo quitaron).
-  const idsEquipos = new Set(todos.map((x) => x.e.id));
-  const idsCompanias = new Set(catalogo.companias.map((c) => c.id));
-  const perdidos = [
-    ...lista.equipos.filter((id) => !idsEquipos.has(id)).map((id) => ["equipos", id] as const),
-    ...lista.companias.filter((id) => !idsCompanias.has(id)).map((id) => ["companias", id] as const),
-  ];
-  const vacio = !equipos.length && !companias.length;
+  // Lo que se guardó y ya no está publicado (la compañía lo pausó o lo quitó).
+  const perdidos = ids.filter((id) => !todos.some((x) => x.e.id === id));
+  const vacio = !equipos.length;
   // Los guardados viven en el navegador: mientras la página arranca no se sabe si hay.
   const enNavegador = useSyncExternalStore(
     () => () => {},
@@ -72,8 +60,8 @@ export function GuardadosVista({ catalogo, categorias }: { catalogo: Catalogo; c
         <div>
           <h1 className="title-lg">Guardados</h1>
           <p className="muted">
-            {vacio ? "Tus equipos y compañías favoritos." : "Lo que marcaste con ♡ para tus próximos shows."} Se guardan en
-            este navegador.
+            {vacio ? "Los equipos que te interesa rentar." : "Los equipos que marcaste con ♡ para tus próximos shows."} Se guardan
+            en este navegador.
           </p>
         </div>
       </div>
@@ -84,7 +72,7 @@ export function GuardadosVista({ catalogo, categorias }: { catalogo: Catalogo; c
             ♡
           </span>
           <h2>Aún no tienes guardados</h2>
-          <p className="muted">Toca ♡ en un equipo o en una compañía para tenerlos a mano aquí cuando armes tu próximo rider.</p>
+          <p className="muted">Toca ♡ en un equipo que te interese rentar para tenerlo a mano aquí cuando armes tu próximo rider.</p>
           <Link href="/explorar?vista=explorar" className="btn primary">
             Explorar equipos
           </Link>
@@ -93,9 +81,11 @@ export function GuardadosVista({ catalogo, categorias }: { catalogo: Catalogo; c
 
       {perdidos.length > 0 && (
         <div className="note">
-          {perdidos.length === 1 ? "Algo que guardaste ya no está publicado." : `${perdidos.length} cosas que guardaste ya no están publicadas.`}{" "}
-          <button type="button" className="link-btn" onClick={() => perdidos.forEach(([t, id]) => alternar(t, id))}>
-            Quitarlas de Guardados
+          {perdidos.length === 1
+            ? "Un equipo que guardaste ya no está publicado."
+            : `${perdidos.length} equipos que guardaste ya no están publicados.`}{" "}
+          <button type="button" className="link-btn" onClick={() => perdidos.forEach(alternar)}>
+            Quitarlos de Guardados
           </button>
         </div>
       )}
@@ -119,41 +109,9 @@ export function GuardadosVista({ catalogo, categorias }: { catalogo: Catalogo; c
                     <b>{pesos(e.precio_dia)}</b> <span className="fine">/ 24 h</span>
                   </span>
                 </button>
-                <Corazon tipo="equipos" id={e.id} nombre={e.nombre} className="g-corazon" />
+                <Corazon id={e.id} nombre={e.nombre} className="g-corazon" />
               </li>
             ))}
-          </ul>
-        </section>
-      )}
-
-      {companias.length > 0 && (
-        <section className="guardados-sec" aria-labelledby="g-companias">
-          <h2 id="g-companias">Compañías · {companias.length}</h2>
-          <ul className="g-companias">
-            {companias.map((c) => {
-              const portada = c.equipos.find((e) => e.fotos[0])?.fotos[0];
-              const resumen = textoResumen(c.resenas);
-              return (
-                <li key={c.id} className="g-compania">
-                  <Link href={`/compania/${c.id}`} className="g-compania-toque">
-                    <span className="eq-thumb">
-                      {portada ? <img src={urlFoto(portada)} alt="" loading="lazy" /> : <IconoCategoria cat="mic" size={26} />}
-                    </span>
-                    <span className="ex-info">
-                      <b>
-                        {c.nombre}
-                        {c.verificada ? <span className="ok-txt"> ✓</span> : null}
-                      </b>
-                      <span className="fine">
-                        {resumen ? `${resumen} · ` : ""}
-                        {c.zona ?? c.ciudad} · {plural(c.equipos.length, "equipo", "equipos")}
-                      </span>
-                    </span>
-                  </Link>
-                  <Corazon tipo="companias" id={c.id} nombre={c.nombre} plano />
-                </li>
-              );
-            })}
           </ul>
         </section>
       )}

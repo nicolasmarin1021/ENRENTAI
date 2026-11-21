@@ -98,7 +98,7 @@ export default function FichaEquipo() {
       </ScrollView>
 
       <View style={estilos.botones}>
-        <Corazon tipo="equipos" id={e.id} nombre={e.nombre} tam={36} />
+        <Corazon id={e.id} nombre={e.nombre} tam={36} />
         <Pressable onPress={() => router.back()} style={estilos.cerrar} accessibilityRole="button" accessibilityLabel="Cerrar">
           <Icono n="cerrar" tam={18} />
         </Pressable>
