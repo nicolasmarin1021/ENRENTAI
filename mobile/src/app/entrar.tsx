@@ -158,6 +158,18 @@ export default function Entrar() {
     }
   }
 
+  // Confirmación con el código del correo (si la plantilla de Supabase lo incluye): no depende de
+  // que el enlace abra la app.
+  async function confirmarConCodigo() {
+    if (codigo.length < 6) return setError("Escribe el código completo que llegó a tu correo.");
+    setOcupado(true);
+    setError("");
+    setAviso("");
+    const { error: e } = await supabase.auth.verifyOtp({ email: correo, token: codigo, type: "signup" });
+    setOcupado(false);
+    if (e) setError(mensajeError(e));
+  }
+
   async function reenviarConfirmacion() {
     setOcupado(true);
     setError("");
@@ -310,12 +322,26 @@ export default function Entrar() {
         </View>
         <Texto v="titulo">Confirma tu correo</Texto>
         <Texto>
-          Te enviamos un correo a <Texto peso={600}>{correo}</Texto>. Ábrelo <Texto peso={600}>en este celular</Texto> y toca el enlace para activar tu
-          cuenta: la app se abre y entras sola.
+          Te enviamos un correo a <Texto peso={600}>{correo}</Texto>. Toca el enlace del correo para activar tu cuenta.
         </Texto>
-        <Texto v="fino">Si lo abres en otro dispositivo, tu cuenta igual queda confirmada: vuelve aquí y entra con tu contraseña.</Texto>
-        {mensajes}
+        <Aviso
+          tono="acento"
+          texto="Si después de tocarlo se abre una página que no carga, no importa: tu cuenta ya quedó confirmada. Vuelve aquí y entra con tu contraseña."
+        />
         <Boton titulo="Ya lo confirmé, entrar" bloque onPress={() => ir("entrar")} />
+        <Texto v="fino">Si el correo trae un código de 6 dígitos, también puedes confirmar con él:</Texto>
+        <Campo
+          etiqueta="Código del correo"
+          value={codigo}
+          onChangeText={(v) => setCodigo(v.replace(/\D/g, "").slice(0, 8))}
+          keyboardType="number-pad"
+          autoComplete="one-time-code"
+          textContentType="oneTimeCode"
+          placeholder="123456"
+          onSubmitEditing={confirmarConCodigo}
+        />
+        {mensajes}
+        <Boton titulo="Confirmar con el código" tipo="secundario" bloque cargando={ocupado} deshabilitado={codigo.length < 6} onPress={confirmarConCodigo} />
         <Boton
           titulo={espera > 0 ? `Reenviar el correo en ${espera} s` : "Reenviar el correo"}
           tipo="enlace"
