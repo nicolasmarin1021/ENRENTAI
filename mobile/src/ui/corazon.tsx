@@ -1,9 +1,9 @@
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { Animated, Platform, Pressable, StyleSheet } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useGuardados } from "@/lib/guardados";
-import { color } from "@/tema";
+import { color, fuente, radio } from "@/tema";
 
 const CORAZON = "M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z";
 
@@ -51,7 +51,43 @@ export function Corazon({
   );
 }
 
+// Botón grande "♡ Guardar" / "♥ Guardado" para la vista de un equipo (bien visible, debajo del nombre).
+export function BotonGuardar({ id, nombre }: { id: string; nombre: string }) {
+  const { guardado, alternar } = useGuardados();
+  const activo = guardado(id);
+  return (
+    <Pressable
+      onPress={() => {
+        alternar(id);
+        if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      }}
+      accessibilityRole="button"
+      accessibilityState={{ selected: activo }}
+      accessibilityLabel={activo ? `Quitar ${nombre} de Guardados` : `Guardar ${nombre}`}
+      style={({ pressed }) => [estilos.pildora, activo && estilos.pildoraActiva, pressed && { opacity: 0.8 }]}
+    >
+      <Svg viewBox="0 0 24 24" width={20} height={20}>
+        <Path d={CORAZON} fill={activo ? "#FFFFFF" : "transparent"} stroke={activo ? "#FFFFFF" : color.coral} strokeWidth={2} strokeLinejoin="round" />
+      </Svg>
+      <Text style={[estilos.pildoraTexto, activo && { color: "#FFFFFF" }]}>{activo ? "Guardado" : "Guardar"}</Text>
+    </Pressable>
+  );
+}
+
 const estilos = StyleSheet.create({
+  pildora: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    height: 44,
+    paddingHorizontal: 20,
+    borderRadius: radio.pildora,
+    borderWidth: 1.5,
+    borderColor: color.coral,
+    backgroundColor: "#FFF5F2",
+  },
+  pildoraActiva: { backgroundColor: color.coral },
+  pildoraTexto: { fontFamily: fuente[600], fontSize: 15.5, color: color.tinta },
   boton: {
     alignItems: "center",
     justifyContent: "center",

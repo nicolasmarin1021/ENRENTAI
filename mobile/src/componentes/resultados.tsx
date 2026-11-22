@@ -71,8 +71,11 @@ export function Resultados({
         const nivel: Nivel = l >= necFoco.cantidad ? "alto" : l > 0 ? "medio" : "nada";
         lista.push({
           ...base,
-          fotos: ref ? [ref.e.fotos[0], ...c.equipos.filter((e) => e.id !== ref.e.id).map((e) => e.fotos[0])].filter(Boolean).slice(0, 5) : [],
-          linea1: ref ? `${textoRef(ref, 60)} · ${ref.exacto ? "exacto" : "equivalente"}` : "No tiene esto libre en tus fechas",
+          // La tarjeta es del equipo que tiene para esa cosa (título), con la compañía debajo.
+          equipo: ref?.e ?? null,
+          equivalente: ref ? !ref.exacto : false,
+          fotos: ref ? [...ref.e.fotos, ...c.equipos.filter((e) => e.id !== ref.e.id).map((e) => e.fotos[0])].filter(Boolean).slice(0, 5) : [],
+          linea1: ref ? (ref.exacto ? "" : `Equivalente a ${necFoco.texto || "lo que pediste"}`) : "No tiene esto libre en tus fechas",
           pin: ref ? textoRef(ref) : "Sin cupo",
           precio: ref ? pesos(ref.e.precio_dia) : "Sin unidades libres",
           precioSub: ref ? `por 24 h · ${l} ${l === 1 ? "libre" : "libres"}` : "en tus fechas",
@@ -87,11 +90,18 @@ export function Resultados({
         const nivel: Nivel = todo ? "alto" : cubiertas ? "medio" : "nada";
         const principal = refs.find((r) => r.exacto) ?? refs[0];
         const exactos = refs.filter((r) => r.exacto).length;
+        const demas = refs.filter((r) => r !== principal);
         lista.push({
           ...base,
-          fotos,
-          linea1: refs.length
-            ? refs.map((r) => textoRef(r, 40)).join(" · ") + (todo ? "" : ` · tiene ${cubiertas} de ${necesidades.length}`)
+          // La tarjeta es del equipo principal que tiene para el pedido (título), con la compañía debajo;
+          // lo demás que tiene va en una línea aparte.
+          equipo: principal?.e ?? null,
+          equivalente: principal ? !principal.exacto : false,
+          fotos: principal ? [...principal.e.fotos, ...fotos.filter((f) => !principal.e.fotos.includes(f))].slice(0, 5) : fotos,
+          linea1: principal
+            ? [demas.length ? `+ ${demas.map((r) => textoRef(r, 30)).join(" · ")}` : "", todo ? "" : `tiene ${cubiertas} de ${necesidades.length}`]
+                .filter(Boolean)
+                .join(" · ")
             : "No tiene lo que buscas libre en tus fechas",
           pin: principal ? textoRef(principal) + (refs.length > 1 ? ` +${refs.length - 1}` : "") : "Sin cupo",
           precio: cubiertas ? pesos(cobro.referencia) : "Sin unidades libres",

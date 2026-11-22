@@ -79,17 +79,26 @@ export function ExplorarEquipos({ cabeza, avisos }: { cabeza: ReactNode; avisos?
   }, [clave]);
 
   const elegida = sel ? companias.find((l) => l[0].c.id === sel) ?? null : null;
+  // Si lo que se ve de esa compañía es un solo equipo (o se buscó uno), la tarjeta es de ese equipo.
+  const unEquipo = elegida && (elegida.length === 1 || !!buscado) ? elegida[0].e : null;
   const tarjeta: DatosTarjeta | null = elegida
     ? {
         c: elegida[0].c,
-        fotos: elegida.map((x) => x.e.fotos[0]).filter(Boolean).slice(0, 5),
+        equipo: unEquipo,
+        fotos: (unEquipo ? [...unEquipo.fotos, ...elegida.slice(1).map((x) => x.e.fotos[0])] : elegida.map((x) => x.e.fotos[0]))
+          .filter(Boolean)
+          .slice(0, 5),
         categoria: elegida[0].e.categoria_id,
-        linea1: elegida.map((x) => x.e.nombre).join(" · "),
+        linea1: unEquipo
+          ? elegida.length > 1
+            ? `+ ${plural(elegida.length - 1, "equipo más", "equipos más")} de esta compañía`
+            : ""
+          : elegida.map((x) => x.e.nombre).join(" · "),
         linea2: [elegida[0].c.zona, lugar ? `a ${textoKm(distanciaKm(elegida[0].c, lugar))} de ${lugar.nombre}` : null, fechas || null]
           .filter(Boolean)
           .join(" · "),
-        precio: `Desde ${pesos(Math.min(...elegida.map((x) => x.e.precio_dia)))}`,
-        precioSub: `por 24 h · ${plural(elegida.length, "equipo", "equipos")}`,
+        precio: unEquipo ? pesos(unEquipo.precio_dia) : `Desde ${pesos(Math.min(...elegida.map((x) => x.e.precio_dia)))}`,
+        precioSub: unEquipo ? "por 24 h · referencia" : `por 24 h · ${plural(elegida.length, "equipo", "equipos")}`,
         apagada: conFechas && !elegida.some((x) => libres(x.e) > 0),
       }
     : null;
