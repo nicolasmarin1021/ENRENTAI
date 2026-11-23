@@ -164,8 +164,8 @@ export function RiderVista({
           <h1 className="title-lg">Tu rider</h1>
           <p className="muted">
             {grupos.length
-              ? `${unidades} ${unidades === 1 ? "unidad" : "unidades"} de ${grupos.length} ${grupos.length === 1 ? "compañía" : "compañías"} para ${lugar?.nombre}. A cada compañía le pides la cotización por WhatsApp.`
-              : "Aquí armas la lista de equipos para un show. A cada compañía le pides la cotización por WhatsApp."}
+              ? `${unidades} ${unidades === 1 ? "unidad" : "unidades"} de ${grupos.length} ${grupos.length === 1 ? "compañía" : "compañías"} para ${lugar?.nombre}. Agendas con cada compañía por separado.`
+              : "Aquí armas la lista de equipos para un show. Agendas con cada compañía por separado."}
           </p>
         </div>
       </div>
@@ -173,10 +173,10 @@ export function RiderVista({
       {resultados.map((r) =>
         r.codigo ? (
           <p key={r.compania} className="form-ok" role="status">
-            Solicitud <b>{r.codigo}</b> lista para {r.compania}: envía el mensaje en WhatsApp para que te responda.{" "}
+            Solicitud <b>{r.codigo}</b> lista para {r.compania}: envía el mensaje para que te responda.{" "}
             {r.url && (
               <a href={r.url} target="_blank" rel="noreferrer">
-                Abrir WhatsApp de nuevo
+                Abrir de nuevo
               </a>
             )}
             {" · "}
@@ -276,15 +276,15 @@ export function RiderVista({
                       conSesion ? (
                         <button
                           type="button"
-                          className="btn primary whatsapp"
+                          className="btn primary"
                           onClick={() => cotizar(g)}
                           disabled={enviando !== null || falta(g)}
                         >
-                          {enviando === g.c.id ? "Abriendo WhatsApp…" : "Cotizar por WhatsApp"}
+                          {enviando === g.c.id ? "Agendando…" : "Agendar"}
                         </button>
                       ) : (
                         <Link href="/necesito" className="btn primary">
-                          Entra con tu correo para cotizar
+                          Entra con tu correo para agendar
                         </Link>
                       )
                     }
@@ -347,7 +347,7 @@ export function RiderVista({
                 </div>
 
                 <div className="field">
-                  <label htmlFor="rd-nota">Nota para las compañías (va en el mensaje de WhatsApp)</label>
+                  <label htmlFor="rd-nota">Nota para las compañías (le llega con tu solicitud)</label>
                   <textarea
                     id="rd-nota"
                     rows={2}
@@ -368,7 +368,7 @@ export function RiderVista({
                 <div className="como-funciona">
                   <b>Cómo funciona</b>
                   <ol>
-                    <li>Pides la cotización por WhatsApp: a la compañía le llega tu rider con fechas y lugar.</li>
+                    <li>Agendas: a la compañía le llega tu rider con fechas y lugar.</li>
                     <li>Acuerdan directamente el precio final y la forma de pago.</li>
                     <li>La compañía marca la solicitud como rentada y el equipo queda apartado para ti.</li>
                   </ol>
@@ -409,7 +409,7 @@ function TarjetaCompania({
   dias: number;
   libres: (e: EquipoPublico) => number;
   onFicha: (e: EquipoPublico) => void;
-  accion: ReactNode; // botón "Cotizar por WhatsApp"
+  accion: ReactNode; // botón "Agendar"
 }) {
   const { c, lineas, op, modalidad, cobro } = g;
   const lugar = pedido.lugar!;

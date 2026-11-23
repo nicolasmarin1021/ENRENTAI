@@ -2,13 +2,12 @@ import type { NextConfig } from "next";
 
 // BETA (modelo de conexión por WhatsApp): estas secciones del modelo completo están ocultas.
 // Sus páginas siguen en el código (y en la rama modelo-full); aquí solo se redirige a la
-// sección equivalente para que ningún enlace quede roto.
+// sección equivalente para que ningún enlace quede roto. El chat (preguntas antes de cotizar,
+// /necesito/chats y /tengo/mensajes) sí está activo en la BETA.
 const OCULTAS_BETA = [
   { source: "/necesito/entregas", destination: "/necesito/reservas" },
-  { source: "/necesito/chats", destination: "/necesito/reservas" },
   { source: "/necesito/pagos", destination: "/necesito/reservas" },
   { source: "/tengo/reservas", destination: "/tengo/panel" },
-  { source: "/tengo/mensajes", destination: "/tengo/panel" },
   { source: "/tengo/liquidaciones", destination: "/tengo/panel" },
 ];
 

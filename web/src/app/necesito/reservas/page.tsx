@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { SELECT_RESERVA, TarjetaReserva, type ReservaFila } from "@/components/tarjeta-reserva";
+import { AccesoMensajes } from "@/components/acceso-mensajes";
+import { agruparPorDia } from "@/lib/medellin";
 import { getSesion } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,8 +47,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/necesito/reservas">, "se
       <div>
         <h1 className="title-lg">Mis solicitudes</h1>
         <p className="muted">
-          Las cotizaciones que pediste por WhatsApp{s.nombre ? `, ${s.nombre}` : ""}. Cuando la compañía marca una como
-          rentada, el equipo queda apartado para ti.
+          Lo que has agendado{s.nombre ? `, ${s.nombre}` : ""}, por el día en que lo pediste. Cuando la compañía marca una
+          como rentada, el equipo queda apartado para ti.
         </p>
       </div>
     </div>
@@ -66,7 +68,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/necesito/reservas">, "se
   }
   const todas = (data ?? []) as unknown as ReservaFila[];
   const activas = todas.filter(esActiva);
-  const pasadas = todas.filter((r) => !esActiva(r)).reverse();
+  const pasadas = todas.filter((r) => !esActiva(r));
   const lista = historial ? pasadas : activas;
 
   // Reseñas que ya dejó (si las reseñas aún no existen en la base de datos, no se muestran).
@@ -81,6 +83,9 @@ async function Lista({ searchParams }: Pick<PageProps<"/necesito/reservas">, "se
   return (
     <>
       {encabezado}
+      <Suspense fallback={null}>
+        <AccesoMensajes lado="cliente" />
+      </Suspense>
       {!historial && pasadas.some((r) => RENTADA.includes(r.estado) && !resenas.has(r.id)) && (
         <p className="note">
           Tienes rentas que ya terminaron sin calificar.{" "}
@@ -97,8 +102,13 @@ async function Lista({ searchParams }: Pick<PageProps<"/necesito/reservas">, "se
       </nav>
       {lista.length ? (
         <div className="bk-list">
-          {lista.map((r) => (
-            <TarjetaReserva key={r.id} r={r} vista="cliente" resena={resenas.get(r.id) ?? null} />
+          {agruparPorDia(lista).map((g) => (
+            <Fragment key={g.titulo}>
+              <h2 className="dia-tit">{g.titulo}</h2>
+              {g.filas.map((r) => (
+                <TarjetaReserva key={r.id} r={r} vista="cliente" resena={resenas.get(r.id) ?? null} />
+              ))}
+            </Fragment>
           ))}
         </div>
       ) : (

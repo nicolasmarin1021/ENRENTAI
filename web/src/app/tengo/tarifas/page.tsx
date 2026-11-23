@@ -5,22 +5,21 @@ import { TarifasVista } from "@/components/tengo/tarifas-vista";
 import { getSesion } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Tarifas" };
+export const metadata: Metadata = { title: "Generalidades" };
 
 export default function PaginaTarifas() {
   return (
     <section className="pagina-ancha">
       <div className="page-hd">
         <div>
-          <h1 className="title-lg">Tarifas</h1>
+          <h1 className="title-lg">Generalidades</h1>
           <p className="muted">
-            Tu WhatsApp para cotizaciones y las tarifas de referencia que ven los clientes: transporte y técnico.
-            Los precios por día de cada equipo se editan en <Link href="/tengo/inventario">Inventario</Link>. Los cambios
-            aplican a las solicitudes nuevas.
+            Lo básico de tu compañía: cómo te contactan, dónde estás y cómo entregas. Los precios por día de cada equipo
+            se editan en <Link href="/tengo/inventario">Inventario</Link>. Los cambios aplican a las solicitudes nuevas.
           </p>
         </div>
       </div>
-      <Suspense fallback={<p className="muted">Cargando tus tarifas…</p>}>
+      <Suspense fallback={<p className="muted">Cargando tus datos…</p>}>
         <Contenido />
       </Suspense>
     </section>
@@ -58,7 +57,7 @@ async function Contenido() {
       direccion_bodega: string | null;
       horario_bodega: string | null;
     }>();
-  if (!c) return <p className="form-err">No pudimos cargar tus tarifas. Recarga la página.</p>;
+  if (!c) return <p className="form-err">No pudimos cargar tus datos. Recarga la página.</p>;
   // WhatsApp para cotizaciones (privado: solo lo ve el dueño). Si falta el SQL 0008, queda vacío.
   const { data: contacto } = await supabase
     .from("companias_privado")

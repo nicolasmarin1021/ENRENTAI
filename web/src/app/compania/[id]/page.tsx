@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { BotonPreguntar } from "@/components/boton-preguntar";
 import { Corazon } from "@/components/corazon";
 import { Estrellas, ListaResenas } from "@/components/resenas";
 import { urlFoto } from "@/lib/catalogo";
@@ -84,8 +85,9 @@ async function Contenido({ params }: Pick<PageProps<"/compania/[id]">, "params">
           </p>
         </div>
         <div className="row-actions">
+          <BotonPreguntar companiaId={c.id} />
           <Link href="/explorar" className="btn primary">
-            Cotizar en Explorar
+            Agendar en Explorar
           </Link>
         </div>
       </div>

@@ -49,3 +49,24 @@ export const rangoCO = (desde: string, hasta: string) => {
 
 export const pesos = (n: number) =>
   new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+
+// Título de un día para agrupar solicitudes: "Hoy", "Ayer" o "sáb, 21 nov" (días de Medellín).
+const ymdCO = (t: number | string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date(t));
+export function tituloDia(iso: string, ahora = Date.now()) {
+  const d = ymdCO(iso);
+  if (d === ymdCO(ahora)) return "Hoy";
+  if (d === ymdCO(ahora - 864e5)) return "Ayer";
+  return diaCO(iso);
+}
+
+// Agrupa por el día en que se hizo la solicitud (campo "creado"): la más reciente primero.
+export function agruparPorDia<T extends { creado: string }>(filas: T[], ahora = Date.now()): { titulo: string; filas: T[] }[] {
+  const grupos: { titulo: string; filas: T[] }[] = [];
+  for (const r of [...filas].sort((a, b) => b.creado.localeCompare(a.creado))) {
+    const titulo = tituloDia(r.creado, ahora);
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.titulo === titulo) ultimo.filas.push(r);
+    else grupos.push({ titulo, filas: [r] });
+  }
+  return grupos;
+}

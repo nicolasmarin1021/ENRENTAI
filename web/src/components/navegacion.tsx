@@ -52,7 +52,7 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
     return () => ro.disconnect();
   }, []);
 
-  // BETA: la conversación y el pago van por WhatsApp, así que no hay chat, entregas, pagos ni liquidaciones.
+  // BETA: el pago se acuerda aparte (no hay entregas, pagos ni liquidaciones); el chat sirve para preguntar antes de cotizar.
   // Las mismas pestañas de la app: Buscar equipos (con su subpanel Explorar), Guardados, Rider y Mis solicitudes.
   const cliente: Pestana[] = [
     { href: "/explorar", texto: "Buscar equipos", activa: (r) => r === "/explorar" || r === "/necesito" },
@@ -69,7 +69,7 @@ export function Navegacion({ datos }: { datos: DatosNav }) {
       activa: (r) => r === "/tengo" || empieza(r, "/tengo/panel", "/tengo/registro"),
     },
     { href: "/tengo/inventario", texto: "Inventario y agenda", activa: (r) => empieza(r, "/tengo/inventario") },
-    { href: "/tengo/tarifas", texto: "Tarifas", activa: (r) => empieza(r, "/tengo/tarifas") },
+    { href: "/tengo/tarifas", texto: "Generalidades", activa: (r) => empieza(r, "/tengo/tarifas") },
   ];
   const pestanas = modo === "compania" ? compania : modo === "cliente" ? cliente : [];
 
@@ -141,12 +141,14 @@ function Cuenta({ datos, modo }: { datos: DatosNav; modo: "cliente" | "compania"
     ? [
         { href: "/tengo/panel", texto: "Panel" },
         { href: "/tengo/inventario", texto: "Inventario y agenda" },
-        { href: "/tengo/tarifas", texto: "Tarifas y WhatsApp" },
+        { href: "/tengo/mensajes", texto: "Preguntas de clientes" },
+        { href: "/tengo/tarifas", texto: "Generalidades" },
         { href: "/tengo/verificacion", texto: "Verificar mi compañía" },
         { href: "/como-funciona", texto: "Cómo funciona la BETA" },
       ]
     : [
         { href: "/necesito/reservas", texto: "Mis solicitudes" },
+        { href: "/necesito/chats", texto: "Mensajes" },
         { href: "/guardados", texto: "Guardados" },
         { href: "/explorar/rider", texto: "Mi rider" },
         { href: "/necesito/verificacion", texto: "Verificar mi identidad" },

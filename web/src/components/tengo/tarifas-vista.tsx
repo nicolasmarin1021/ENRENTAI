@@ -147,7 +147,7 @@ export function TarifasVista({ inicial, whatsapp }: { inicial: Tarifas; whatsapp
       return;
     }
     if (tarifas.error || !tarifas.data?.length || contacto.error || !contacto.data?.length) {
-      setError("No pudimos guardar tus tarifas. Revisa tu conexión e intenta de nuevo.");
+      setError("No pudimos guardar tus cambios. Revisa tu conexión e intenta de nuevo.");
       return;
     }
     setGuardado(true);
@@ -157,8 +157,10 @@ export function TarifasVista({ inicial, whatsapp }: { inicial: Tarifas; whatsapp
   return (
     <div className="tarifas">
       <form className="form" onSubmit={guardar} noValidate>
-        <section className="card" aria-labelledby="t-wa">
-          <h2 id="t-wa">WhatsApp para cotizaciones</h2>
+        {/* Una sola tarjeta con secciones separadas por líneas: contacto, bodega, entregas y técnico. */}
+        <div className="card ga">
+        <section className="ga-sec" aria-labelledby="t-wa">
+          <h2 id="t-wa">Contacto</h2>
           <p className="fine">
             Aquí te escriben los clientes cuando piden una cotización desde su rider. Solo se le entrega a quien pide una
             cotización.
@@ -178,9 +180,32 @@ export function TarifasVista({ inicial, whatsapp }: { inicial: Tarifas; whatsapp
           </div>
         </section>
 
-        {/* BETA: sin depósito (se conserva el valor guardado para el modelo completo, pero no se muestra). */}
-        <section className="card" aria-labelledby="t-tr">
-          <h2 id="t-tr">Transporte</h2>
+        <section className="ga-sec" aria-labelledby="t-bod">
+          <h2 id="t-bod">Bodega</h2>
+          <p className="fine">
+            Los clientes que eligen recoger el equipo ven esta dirección y este horario. El punto exacto en el mapa lo
+            ajustas en el <Link href="/tengo/panel">Panel</Link>.
+          </p>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="t-dir">Dirección</label>
+              <input
+                id="t-dir"
+                autoComplete="street-address"
+                placeholder="Ej.: Cra. 50 # 10-20, bodega 3"
+                value={f.direccion}
+                onChange={texto("direccion")}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="t-horario">Horario de atención</label>
+              <input id="t-horario" placeholder="Ej.: Lun a sáb, 8:00 a 18:00" value={f.horario} onChange={texto("horario")} />
+            </div>
+          </div>
+        </section>
+
+        <section className="ga-sec" aria-labelledby="t-tr">
+          <h2 id="t-tr">Entregas</h2>
           <div className="field">
             <label htmlFor="t-cobertura">Cobertura de entregas</label>
             <select id="t-cobertura" value={f.cobertura} onChange={texto("cobertura")}>
@@ -252,31 +277,7 @@ export function TarifasVista({ inicial, whatsapp }: { inicial: Tarifas; whatsapp
           )}
         </section>
 
-        <section className="card" aria-labelledby="t-bod">
-          <h2 id="t-bod">Bodega</h2>
-          <p className="fine">
-            Los clientes que eligen recoger el equipo ven esta dirección y este horario. El punto exacto en el mapa lo
-            ajustas en el <Link href="/tengo/panel">Panel</Link>.
-          </p>
-          <div className="form-grid">
-            <div className="field">
-              <label htmlFor="t-dir">Dirección</label>
-              <input
-                id="t-dir"
-                autoComplete="street-address"
-                placeholder="Ej.: Cra. 50 # 10-20, bodega 3"
-                value={f.direccion}
-                onChange={texto("direccion")}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="t-horario">Horario de atención</label>
-              <input id="t-horario" placeholder="Ej.: Lun a sáb, 8:00 a 18:00" value={f.horario} onChange={texto("horario")} />
-            </div>
-          </div>
-        </section>
-
-        <section className="card" aria-labelledby="t-tec">
+        <section className="ga-sec" aria-labelledby="t-tec">
           <h2 id="t-tec">
             Técnico <span className="fine">opcional</span>
           </h2>
@@ -298,6 +299,7 @@ export function TarifasVista({ inicial, whatsapp }: { inicial: Tarifas; whatsapp
             </div>
           </div>
         </section>
+        </div>
 
         {error && (
           <p className="form-err" role="alert">
@@ -306,12 +308,12 @@ export function TarifasVista({ inicial, whatsapp }: { inicial: Tarifas; whatsapp
         )}
         {guardado && !hayCambios && (
           <p className="form-ok" role="status">
-            Tarifas guardadas. Aplican a las solicitudes nuevas.
+            Cambios guardados. Aplican a las solicitudes nuevas.
           </p>
         )}
         <div className="row-actions guardar-tarifas">
           <button type="submit" className="btn primary lg" disabled={ocupado || !hayCambios}>
-            {ocupado ? "Guardando…" : "Guardar tarifas"}
+            {ocupado ? "Guardando…" : "Guardar cambios"}
           </button>
           {hayCambios && <span className="fine">Tienes cambios sin guardar.</span>}
         </div>

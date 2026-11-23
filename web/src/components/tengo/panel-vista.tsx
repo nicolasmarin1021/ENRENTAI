@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { Fragment, Suspense } from "react";
+import { AccesoMensajes } from "@/components/acceso-mensajes";
 import { Mapa, type Marcador } from "@/components/mapa";
 import { TarjetaReserva, type ReservaFila } from "@/components/tarjeta-reserva";
 import { UbicacionBodega } from "@/components/ubicacion-bodega";
 import { hoyCO, ocupacionDia, sumarDias, type Movimiento } from "@/lib/agenda";
 import { Estrellas, ListaResenas } from "@/components/resenas";
 import { ESTADOS_RESERVA } from "@/lib/cobro";
-import { pesos, rangoCO } from "@/lib/medellin";
+import { agruparPorDia, pesos, rangoCO } from "@/lib/medellin";
 import { promedioTexto, type Resena } from "@/lib/resenas";
 
 export type CompaniaPanel = {
@@ -128,6 +130,10 @@ export function PanelVista({
         </div>
       </div>
 
+      <Suspense fallback={null}>
+        <AccesoMensajes lado="compania" />
+      </Suspense>
+
       {!c.verificada && (
         <p className="note">
           Verifica tu compañía con su NIT y el RUT o el certificado de Cámara de Comercio para mostrar el sello «Verificada» a
@@ -151,10 +157,17 @@ export function PanelVista({
           <section className="bk-list" aria-label="Solicitudes por confirmar">
             <div className="sec-hd">
               <h2>Solicitudes por confirmar</h2>
-              <span className="fine">Cotizaciones que te pidieron por WhatsApp; no apartan equipo hasta que las marques como rentadas</span>
+              <span className="fine">Lo que te pidieron agendar, por el día en que lo pidieron; no aparta equipo hasta que lo marques como rentado</span>
             </div>
             {pendientes.length ? (
-              pendientes.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" identidadVerificada={verificados.includes(r.id)} />)
+              agruparPorDia(pendientes).map((g) => (
+                <Fragment key={g.titulo}>
+                  <h3 className="dia-tit">{g.titulo}</h3>
+                  {g.filas.map((r) => (
+                    <TarjetaReserva key={r.id} r={r} vista="compania" identidadVerificada={verificados.includes(r.id)} />
+                  ))}
+                </Fragment>
+              ))
             ) : (
               <p className="vacio">No tienes solicitudes por confirmar.</p>
             )}
@@ -166,7 +179,14 @@ export function PanelVista({
               <span className="fine">El equipo queda apartado en tu agenda en esas fechas</span>
             </div>
             {enCurso.length ? (
-              enCurso.map((r) => <TarjetaReserva key={r.id} r={r} vista="compania" identidadVerificada={verificados.includes(r.id)} />)
+              agruparPorDia(enCurso).map((g) => (
+                <Fragment key={g.titulo}>
+                  <h3 className="dia-tit">{g.titulo}</h3>
+                  {g.filas.map((r) => (
+                    <TarjetaReserva key={r.id} r={r} vista="compania" identidadVerificada={verificados.includes(r.id)} />
+                  ))}
+                </Fragment>
+              ))
             ) : (
               <p className="vacio">Aún no tienes solicitudes rentadas.</p>
             )}

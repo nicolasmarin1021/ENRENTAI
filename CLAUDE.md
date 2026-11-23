@@ -35,13 +35,15 @@ El modelo completo (pagos, depósitos) está guardado en la rama `modelo-full` y
   por correo). La web sigue con código al correo.
 - La ubicación de cada compañía (pin en Tarifas) es la misma del mapa de Buscar equipos y Explorar.
 - Chat interno (app): el cliente pregunta a una compañía sin cotizar (no aparta equipos) con «Hacer una pregunta»;
-  bandeja en `mensajes` (acceso en Mis solicitudes y en el Panel), conversación en `chat/[id]`. La web aún no lo tiene.
+  bandeja en `mensajes` (acceso en Mis solicitudes y en el Panel), conversación en `chat/[id]`. La web también lo tiene:
+  botón «Preguntar» (`boton-preguntar.tsx`), `/necesito/chats` y `/tengo/mensajes`.
 - Cotización en PDF (como la web): `mobile/src/lib/cotizacion.ts` (expo-print + expo-sharing). Botón en el Rider (junto a Agendar) y en cada solicitud (cliente y compañía).
 - Mapa (app): MapLibre + OpenFreeMap (gratis, sin claves) dentro de una vista web, igual en iPhone y Android: `mobile/src/ui/mapa.tsx` y `mapa-html.ts`. Necesita internet.
 - En el mapa no se muestran precios sino referencias de equipo (exacto o «≈» equivalente).
 - La web ya tiene, como la app: subpaneles Buscar equipos | Explorar (`/explorar?vista=explorar`, lista o mapa),
   Guardados (♡, en el navegador, `/guardados`) y la verificación de identidad (`/necesito/verificacion`,
-  `/tengo/verificacion`, revisión en `/admin/verificaciones`). Todavía no muestra el perfil del cliente ni sus calificaciones.
+  `/tengo/verificacion`, revisión en `/admin/verificaciones`). Todavía no muestra el perfil del cliente ni sus calificaciones. También tiene Agendar, Generalidades (antes Tarifas),
+  solicitudes agrupadas por día (Hoy, Ayer…) y la cotización en PDF para cliente y compañía.
 
 ## graphify
 

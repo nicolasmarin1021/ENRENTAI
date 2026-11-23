@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { BotonPreguntar } from "@/components/boton-preguntar";
 import { Corazon } from "@/components/corazon";
 import { IconoCategoria } from "@/components/iconos";
 import { Mapa, type Marcador } from "@/components/mapa";
@@ -405,6 +406,7 @@ function VentanaExplorar({
           {plural(lista.length, "equipo", "equipos")} · desde {pesos(Math.min(...lista.map((x) => x.e.precio_dia)))} por 24 h
         </span>
         {fechas && <span className="tag">{fechas}</span>}
+        <BotonPreguntar companiaId={c.id} className="btn sm" />
       </div>
       <ul className="pop-list">
         {lista.map(({ e }) => {

@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BotonPreguntar } from "@/components/boton-preguntar";
 import { Corazon } from "@/components/corazon";
 import { IconoCategoria } from "@/components/iconos";
 import { Mapa, type Marcador } from "@/components/mapa";
@@ -385,6 +386,7 @@ function VentanaCompania({
             {c.tecnico_nombre} · {pesos(c.tecnico_tarifa_dia)}/día
           </span>
         ) : null}
+        <BotonPreguntar companiaId={c.id} className="btn sm" />
       </div>
       <ul className="pop-list">
         {grupos.map(({ n, items, hayExacto }) => (
@@ -606,13 +608,16 @@ export function FichaEquipo({
               {conFechas ? `${libres} de ${e.unidades} libres en tus fechas` : `${e.unidades} ${e.unidades === 1 ? "unidad" : "unidades"}`}
             </span>
           </div>
-          {enRider > 0 ? (
-            <span className="tag ok">{enRider} en tu rider</span>
-          ) : (
-            <button type="button" className="btn primary sm" onClick={() => rider.cambiar(e, 1)} disabled={libres === 0}>
-              {libres === 0 ? "Sin unidades" : "+ Agregar al rider"}
-            </button>
-          )}
+          <div className="row-actions">
+            <BotonPreguntar companiaId={e.compania_id} className="btn sm" texto={`Hola, tengo una pregunta sobre ${e.nombre}: `} />
+            {enRider > 0 ? (
+              <span className="tag ok">{enRider} en tu rider</span>
+            ) : (
+              <button type="button" className="btn primary sm" onClick={() => rider.cambiar(e, 1)} disabled={libres === 0}>
+                {libres === 0 ? "Sin unidades" : "+ Agregar al rider"}
+              </button>
+            )}
+          </div>
         </div>
 
         <dl className="dl">

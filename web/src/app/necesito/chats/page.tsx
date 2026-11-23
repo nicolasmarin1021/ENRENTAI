@@ -5,17 +5,17 @@ import { ChatVista } from "@/components/chat/chat-vista";
 import { cargarChat } from "@/lib/chat-servidor";
 import { getSesion } from "@/lib/sesion";
 
-export const metadata: Metadata = { title: "Chats" };
+export const metadata: Metadata = { title: "Mensajes" };
 
 export default function Chats({ searchParams }: PageProps<"/necesito/chats">) {
   return (
     <section className="pagina-ancha">
       <div className="page-hd">
         <div>
-          <h1 className="title-lg">Chats</h1>
+          <h1 className="title-lg">Mensajes</h1>
           <p className="muted">
-            Habla directo con las compañías a las que les pides equipo. Cada chat muestra tus reservas con esa compañía y
-            los avisos de cada paso.
+            Pregúntale a una compañía lo que necesites antes de cotizar. Preguntar no es una solicitud y no aparta
+            equipos; cuando quieras cotizar, hazlo desde tu rider.
           </p>
         </div>
       </div>
@@ -31,12 +31,13 @@ async function Contenido({ searchParams }: Pick<PageProps<"/necesito/chats">, "s
   if (!s) {
     return (
       <div className="empty">
-        <p>Entra con tu cuenta para ver tus chats.</p>
+        <p>Entra con tu cuenta para ver tus mensajes.</p>
         <Link href="/necesito" className="btn primary">Entrar</Link>
       </div>
     );
   }
   const datos = await cargarChat("cliente", sp);
-  if (!datos.ok) return <p className="fine">Para usar el chat falta ejecutar el SQL 0006_chat.sql en Supabase.</p>;
-  return <ChatVista lado="cliente" {...datos} />;
+  if (!datos.ok) return <p className="fine">Para usar el chat falta ejecutar el SQL 0014_preguntas_chat.sql en Supabase.</p>;
+  const textoInicial = typeof sp.texto === "string" ? sp.texto.slice(0, 500) : "";
+  return <ChatVista lado="cliente" {...datos} textoInicial={textoInicial} />;
 }

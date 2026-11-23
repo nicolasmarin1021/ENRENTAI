@@ -34,9 +34,9 @@ export const otroLado = (l: Lado): Lado => (l === "cliente" ? "compania" : "clie
 // Mensajes rápidos: el texto se agrega al campo para completarlo antes de enviar.
 export const RAPIDOS: Record<Lado, [etiqueta: string, texto: string][]> = {
   cliente: [
-    ["Cambiar la hora de entrega", "Quisiera cambiar la hora de entrega a las "],
-    ["Agregar o quitar equipos", "Quisiera agregar "],
-    ["Un equipo presenta fallas", "Tenemos un problema con "],
+    ["¿Está disponible?", "¿Tienen disponible en estas fechas: "],
+    ["¿Qué trae el equipo?", "¿Qué accesorios trae (baterías, cables, antenas)? "],
+    ["¿Entregan en mi lugar?", "¿Hacen entrega en "],
     ["Plan de frecuencias", "¿Nos comparten el plan de frecuencias?"],
   ],
   compania: [

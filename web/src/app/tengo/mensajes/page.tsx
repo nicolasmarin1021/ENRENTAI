@@ -5,17 +5,17 @@ import { ChatVista } from "@/components/chat/chat-vista";
 import { cargarChat } from "@/lib/chat-servidor";
 import { getSesion } from "@/lib/sesion";
 
-export const metadata: Metadata = { title: "Mensajes" };
+export const metadata: Metadata = { title: "Preguntas de clientes" };
 
 export default function Mensajes({ searchParams }: PageProps<"/tengo/mensajes">) {
   return (
     <section className="pagina-ancha">
       <div className="page-hd">
         <div>
-          <h1 className="title-lg">Mensajes</h1>
+          <h1 className="title-lg">Preguntas de clientes</h1>
           <p className="muted">
-            Conversaciones con los clientes que te envían solicitudes: coordina horarios de entrega y recogida, equipos y
-            detalles del show.
+            Lo que te preguntan antes de cotizar y las conversaciones con quienes te piden equipo. Responde aquí; las
+            cotizaciones siguen llegando a tu panel y a tu WhatsApp.
           </p>
         </div>
       </div>
@@ -37,6 +37,6 @@ async function Contenido({ searchParams }: Pick<PageProps<"/tengo/mensajes">, "s
     );
   }
   const datos = await cargarChat("compania", sp);
-  if (!datos.ok) return <p className="fine">Para usar el chat falta ejecutar el SQL 0006_chat.sql en Supabase.</p>;
+  if (!datos.ok) return <p className="fine">Para usar el chat falta ejecutar el SQL 0014_preguntas_chat.sql en Supabase.</p>;
   return <ChatVista lado="compania" {...datos} />;
 }

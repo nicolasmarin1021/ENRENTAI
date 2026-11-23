@@ -27,11 +27,12 @@ type Props = {
   abierta: ConversacionAbierta | null;
   explicita: boolean; // se pidió esa conversación (en el celular se muestra en vez de la lista)
   ahora: number;
+  textoInicial?: string; // comienzo del mensaje (viene de «Preguntar» en un equipo)
 };
 
 // Bandeja de chats: la lista de conversaciones y la conversación abierta.
 // Los mensajes nuevos llegan en tiempo real; la bandeja y los contadores se recargan solos.
-export function ChatVista({ lado, lista, abierta, explicita, ahora }: Props) {
+export function ChatVista({ lado, lista, abierta, explicita, ahora, textoInicial = "" }: Props) {
   const router = useRouter();
   const ruta = usePathname();
   const angosto = useEsAngosto();
@@ -144,8 +145,8 @@ export function ChatVista({ lado, lista, abierta, explicita, ahora }: Props) {
           ) : (
             <li className="chat-vacio">
               {lado === "cliente"
-                ? "Cuando le envíes una solicitud a una compañía, aquí podrás escribirle."
-                : "Cuando un cliente te envíe una solicitud, aquí podrás escribirle."}
+                ? "Pregúntale a una compañía desde «Preguntar» en un equipo, sin cotizar ni apartar nada."
+                : "Cuando un cliente te escriba o te pida una cotización, aquí podrás responderle."}
             </li>
           )}
         </ul>
@@ -160,6 +161,7 @@ export function ChatVista({ lado, lista, abierta, explicita, ahora }: Props) {
           ahora={ahora}
           volver={ruta}
           alEnviar={agregarPropio}
+          textoInicial={textoInicial}
         />
       ) : (
         <div className="chat-main chat-empty">
@@ -177,6 +179,7 @@ function Conversacion({
   ahora,
   volver,
   alEnviar,
+  textoInicial,
 }: {
   lado: Lado;
   abierta: ConversacionAbierta;
@@ -184,13 +187,14 @@ function Conversacion({
   ahora: number;
   volver: string;
   alEnviar: (m: Mensaje) => void;
+  textoInicial: string;
 }) {
   const { conv, reservas } = abierta;
   // Arriba van las reservas en curso, confirmadas o por confirmar; se muestran dos y el resto en "+N más".
   const activa = (estado: string) => ["en_curso", "confirmada", "pendiente"].includes(estado);
   const destacadas = [...reservas].sort((a, b) => Number(activa(b.estado)) - Number(activa(a.estado))).slice(0, 2);
   const resto = reservas.length - destacadas.length;
-  const [texto, setTexto] = useState("");
+  const [texto, setTexto] = useState(textoInicial);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const listaRef = useRef<HTMLOListElement>(null);
@@ -304,7 +308,7 @@ function Conversacion({
       )}
 
       <ol className="msgs" ref={listaRef} role="log" aria-live="polite" aria-label="Mensajes">
-        {filas.length ? filas : <li className="msg sys"><span>Escribe tu primer mensaje.</span></li>}
+        {filas.length ? filas : <li className="msg sys"><span>{lado === "cliente" ? "Pregunta lo que necesites antes de cotizar: esto no aparta equipos." : "Todavía no hay mensajes."}</span></li>}
       </ol>
 
       <div className="chat-rapidos" role="group" aria-label="Mensajes rápidos">

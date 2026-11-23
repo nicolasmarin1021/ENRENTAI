@@ -1,7 +1,8 @@
 import { ESTADOS_RESERVA } from "@/lib/cobro";
 import { fechaCO, pesos, rangoCO } from "@/lib/medellin";
-import { CancelarReserva, EscribirWhatsApp, ResponderReserva } from "./acciones-reserva";
+import { CancelarReserva, ResponderReserva } from "./acciones-reserva";
 import { BotonPDF } from "./boton-pdf";
+import { BotonPreguntar } from "./boton-preguntar";
 import { CalificarCompania } from "./resenas";
 
 export type ReservaFila = {
@@ -27,6 +28,7 @@ export type ReservaFila = {
   nota: string | null;
   motivo_rechazo: string | null;
   cliente_nombre: string;
+  compania_id: string;
   creado: string;
   actualizado?: string;
   companias: { nombre: string; zona: string | null; direccion_bodega: string | null; horario_bodega: string | null } | null;
@@ -37,7 +39,7 @@ export type ReservaFila = {
 
 export const SELECT_RESERVA =
   "id, codigo, estado, entrega, recogida, dias, modalidad, lugar_nombre, lugar_direccion, distancia_km, con_tecnico, " +
-  "lugar_lat, lugar_lng, alquiler, transporte, tecnico, servicio, deposito_pct, deposito, comision, total, nota, motivo_rechazo, cliente_nombre, creado, actualizado, " +
+  "lugar_lat, lugar_lng, alquiler, transporte, tecnico, servicio, deposito_pct, deposito, comision, total, nota, motivo_rechazo, cliente_nombre, compania_id, creado, actualizado, " +
   "companias(nombre, zona, direccion_bodega, horario_bodega), reserva_items(equipo_id, nombre, cantidad, precio_dia)";
 
 const km = (n: number | null) => (n === null ? null : `${String(Math.round(Number(n) * 10) / 10).replace(".", ",")} km`);
@@ -117,13 +119,6 @@ export function TarjetaReserva({
 
       {r.nota && <p className="bk-note">“{r.nota}”</p>}
       {r.estado === "rechazada" && r.motivo_rechazo && <p className="bk-note">No se concretó: {r.motivo_rechazo}</p>}
-      {vista === "compania" && r.estado === "pendiente" && (
-        <p className="bk-note">
-          El cliente te escribió por WhatsApp con esta solicitud. Cuando cierren el trato, márcala como rentada para apartar
-          el equipo en tu agenda.
-        </p>
-      )}
-
       <footer className="bk-ft">
         <details>
           <summary>Detalle de la cotización</summary>
@@ -143,7 +138,7 @@ export function TarjetaReserva({
             <CalificarCompania reservaId={r.id} compania={r.companias?.nombre ?? "la compañía"} inicial={resena} />
           )}
           {vista === "compania" && r.estado === "pendiente" && <ResponderReserva id={r.id} />}
-          {vista === "cliente" && (
+          {(
             <BotonPDF
               texto="Cotización PDF"
               datos={{
@@ -183,7 +178,9 @@ export function TarjetaReserva({
             <CancelarReserva id={r.id} />
           )}
           {vista === "cliente" && ["pendiente", "confirmada"].includes(r.estado) && (
-            <EscribirWhatsApp id={r.id} codigo={r.codigo} compania={r.companias?.nombre ?? "la compañía"} />
+            <BotonPreguntar companiaId={r.compania_id} className="btn primary" texto={`Hola, te escribo por la solicitud ${r.codigo}: `}>
+              Conversar con proveedor
+            </BotonPreguntar>
           )}
         </div>
       </footer>
