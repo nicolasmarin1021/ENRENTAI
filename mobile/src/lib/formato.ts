@@ -33,6 +33,18 @@ export function tituloDiaCO(iso: string | Date, ahora: number) {
   return d === 0 ? "Hoy" : d === 1 ? "Mañana" : d === -1 ? "Ayer" : diaCO(iso);
 }
 
+// "sáb 22 nov 2026 · 14:00" (para documentos)
+export function fechaLargaCO(iso: string | Date) {
+  const p = partesCO(new Date(iso));
+  return `${DIAS[p.semana]} ${p.dia} ${MESES[p.mes]} ${p.anio} · ${dos(p.hora)}:${dos(p.minuto)}`;
+}
+
+// "COT-20261123" (día de hoy en Medellín, para numerar cotizaciones)
+export function numeroCotizacionCO(ahora = new Date()) {
+  const p = partesCO(ahora);
+  return `COT-${p.anio}${dos(p.mes + 1)}${dos(p.dia)}-${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
 // "sáb 22 nov · 14:00"
 export function fechaCO(iso: string | Date) {
   const p = partesCO(new Date(iso));

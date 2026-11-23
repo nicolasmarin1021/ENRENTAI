@@ -5,6 +5,7 @@ import { perfilDeSolicitud, type PerfilCliente } from "@/lib/perfil";
 import { ESTADOS_RESERVA, RENTADA, referencia, type ReservaFila } from "@/lib/reservas";
 import { mensajeError, supabase } from "@/lib/supabase";
 import { usePreguntar } from "@/lib/chat";
+import { compartirCotizacion, cotizacionDeSolicitud } from "@/lib/cotizacion";
 import { Aviso, Boton, Campo, Etiqueta, Fila, Tarjeta, Texto } from "@/ui/base";
 import { Estrellas, Icono } from "@/ui/iconos";
 import { color, fuente, radio } from "@/tema";
@@ -64,6 +65,13 @@ export function TarjetaSolicitud({
       : `Retiro en bodega${r.companias?.direccion_bodega ? ` (${r.companias.direccion_bodega})` : ""} el ${fechaCO(r.entrega)} · devolución ${fechaCO(r.recogida)}`) +
     (r.con_tecnico ? " · con técnico" : "");
 
+  // La cotización formal en PDF (la misma que en la web), siempre disponible en la solicitud.
+  async function bajarPDF() {
+    setOcupado(true);
+    setError(await compartirCotizacion(cotizacionDeSolicitud(r)));
+    setOcupado(false);
+  }
+
   // Conversar con el proveedor por el chat interno de ENRENTA.
   const chat = usePreguntar();
   const conversar = () => chat.preguntar(r.compania_id, r.companias?.nombre ?? "Compañía", `Hola, te escribo por la solicitud ${r.codigo}: `);
@@ -78,6 +86,10 @@ export function TarjetaSolicitud({
     });
   }
 
+  if (vista === "compania") {
+    return <DetalleCompania r={r} perfil={perfil} futura={futura} logistica={logistica} ocupado={ocupado} error={error} bajarPDF={bajarPDF} onCambio={onCambio} />;
+  }
+
   return (
     <Tarjeta>
       <View style={estilos.cabeza}>
@@ -88,31 +100,13 @@ export function TarjetaSolicitud({
         </Texto>
       </View>
 
-      {vista === "compania" ? (
-        // Quién te pide el equipo: su perfil (foto, a qué se dedica, dónde trabaja, rentas…).
-        <View style={{ gap: 8 }}>
-          <Texto v="etiqueta">Sobre el cliente</Texto>
-          {perfil ? (
-            <TarjetaPerfil p={perfil} />
-          ) : (
-            <Texto peso={600} style={{ fontSize: 16.5 }}>
-              {r.cliente_nombre || "Cliente"}
-            </Texto>
-          )}
-          <Texto v="fino">
-            Show en {r.lugar_nombre}
-            {r.distancia_km !== null ? ` · a ${String(Math.round(Number(r.distancia_km) * 10) / 10).replace(".", ",")} km de tu bodega` : ""}
-          </Texto>
-        </View>
-      ) : (
-        <View style={{ gap: 2 }}>
-          <Texto v="etiqueta">Compañía</Texto>
-          <Texto peso={600} style={{ fontSize: 16.5 }}>
-            {r.companias?.nombre}
-          </Texto>
-          <Texto v="fino">Show en {r.lugar_nombre}</Texto>
-        </View>
-      )}
+      <View style={{ gap: 2 }}>
+        <Texto v="etiqueta">Compañía</Texto>
+        <Texto peso={600} style={{ fontSize: 16.5 }}>
+          {r.companias?.nombre}
+        </Texto>
+        <Texto v="fino">Show en {r.lugar_nombre}</Texto>
+      </View>
 
       <View style={{ gap: 3 }}>
         {r.reserva_items.map((i, k) => (
@@ -129,7 +123,7 @@ export function TarjetaSolicitud({
       <View style={estilos.precio}>
         <View style={{ flex: 1 }}>
           <Texto v="fino">Precio de referencia · {plural(r.dias, "día", "días")}</Texto>
-          <Texto v="fino">{vista === "compania" ? "Sin comisión de ENRENTA en la BETA" : "El valor final lo acuerdas con la compañía"}</Texto>
+          <Texto v="fino">El valor final lo acuerdas con la compañía</Texto>
         </View>
         <Texto peso={700} style={{ fontSize: 18 }}>
           {pesos(referencia(r))}
@@ -138,12 +132,6 @@ export function TarjetaSolicitud({
 
       {r.nota ? <Texto style={estilos.nota}>“{r.nota}”</Texto> : null}
       {r.estado === "rechazada" && r.motivo_rechazo ? <Texto style={estilos.nota}>No se concretó: {r.motivo_rechazo}</Texto> : null}
-      {vista === "compania" && r.estado === "pendiente" ? (
-        <Texto v="fino">
-          El cliente te escribió por WhatsApp con esta solicitud. Cuando cierren el trato, márcala como rentada para apartar el equipo en tu agenda.
-        </Texto>
-      ) : null}
-
       <Pressable onPress={() => setDetalle(!detalle)} accessibilityRole="button" style={{ paddingVertical: 2 }}>
         <Texto v="fino" peso={600} tono={color.acento}>
           {detalle ? "Ocultar detalle" : "Ver detalle de la cotización"}
@@ -162,20 +150,125 @@ export function TarjetaSolicitud({
       {error ? <Aviso tono="mal" texto={error} /> : null}
 
       <View style={{ gap: 8 }}>
-        {vista === "cliente" && ["pendiente", "confirmada"].includes(r.estado) ? (
+        <Boton titulo="Cotización PDF" tipo="secundario" bloque deshabilitado={ocupado} onPress={bajarPDF} />
+        {["pendiente", "confirmada"].includes(r.estado) ? (
           <Boton titulo="Conversar con proveedor" tipo="primario" bloque icono={<Icono n="chat" tam={18} tinta="#FFFFFF" grosor={2} />} cargando={chat.abriendo} onPress={conversar} />
         ) : null}
         {puedeCalificar ? <Calificar reservaId={r.id} compania={r.companias?.nombre ?? "la compañía"} inicial={resena} onListo={onCambio} /> : null}
-        {vista === "compania" && r.estado === "pendiente" ? <Responder id={r.id} onListo={onCambio} /> : null}
-        {vista === "compania" && !futura && RENTADA.includes(r.estado) ? (
-          <CalificarCliente reservaId={r.id} nombre={perfil?.nombre || r.cliente_nombre || ""} onListo={onCambio} />
-        ) : null}
-        {vista === "cliente" && futura && (r.estado === "pendiente" || r.estado === "confirmada") ? (
+        {futura && (r.estado === "pendiente" || r.estado === "confirmada") ? (
           <Boton titulo="Cancelar solicitud" tipo="peligro" bloque deshabilitado={ocupado} onPress={cancelar} />
         ) : null}
         {chat.error ? <Aviso tono="mal" texto={chat.error} /> : null}
       </View>
     </Tarjeta>
+  );
+}
+
+// La solicitud vista por la compañía (dentro de la ventana que se abre desde el Panel): sin cajas dentro
+// de cajas, solo secciones separadas por líneas: cliente, pedido, total y lo que puede hacer.
+function DetalleCompania({
+  r,
+  perfil,
+  futura,
+  logistica,
+  ocupado,
+  error,
+  bajarPDF,
+  onCambio,
+}: {
+  r: ReservaFila;
+  perfil: PerfilCliente | null;
+  futura: boolean;
+  logistica: string;
+  ocupado: boolean;
+  error: string;
+  bajarPDF: () => void;
+  onCambio: () => void;
+}) {
+  const [detalle, setDetalle] = useState(false);
+  const est = ESTADOS_RESERVA[r.estado] ?? { texto: r.estado, tono: "" as const };
+  const km = r.distancia_km !== null ? ` · a ${String(Math.round(Number(r.distancia_km) * 10) / 10).replace(".", ",")} km de tu bodega` : "";
+  return (
+    <View style={{ gap: 16 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Etiqueta texto={est.texto} tono={est.tono} />
+        <Texto v="fino" style={{ flex: 1 }} numberOfLines={1}>
+          Enviada el {fechaCO(r.creado)}
+        </Texto>
+      </View>
+
+      {perfil ? (
+        <TarjetaPerfil p={perfil} />
+      ) : (
+        <Texto peso={600} style={{ fontSize: 17 }}>
+          {r.cliente_nombre || "Cliente"}
+        </Texto>
+      )}
+
+      <View style={estilos.sep} />
+
+      <View style={{ gap: 6 }}>
+        <Texto v="etiqueta">Pedido</Texto>
+        {r.reserva_items.map((i, k) => (
+          <Texto key={k}>
+            <Texto peso={600} tono={color.acento}>
+              {i.cantidad}×
+            </Texto>{" "}
+            {i.nombre}
+          </Texto>
+        ))}
+        <Texto v="fino" style={{ marginTop: 2 }}>
+          {r.lugar_nombre}
+          {km}
+        </Texto>
+        <Texto v="fino">{logistica}</Texto>
+        {r.nota ? <Texto style={estilos.nota}>“{r.nota}”</Texto> : null}
+        {r.estado === "rechazada" && r.motivo_rechazo ? <Texto style={estilos.nota}>No se concretó: {r.motivo_rechazo}</Texto> : null}
+      </View>
+
+      <View style={estilos.sep} />
+
+      <View style={{ gap: 6 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <Texto peso={600}>Total de referencia</Texto>
+            <Texto v="fino">{plural(r.dias, "día", "días")} · sin comisión de ENRENTA</Texto>
+          </View>
+          <Texto peso={700} style={{ fontSize: 20 }}>
+            {pesos(referencia(r))}
+          </Texto>
+        </View>
+        <Pressable onPress={() => setDetalle(!detalle)} accessibilityRole="button" style={{ paddingVertical: 2 }}>
+          <Texto v="fino" peso={600} tono={color.acento}>
+            {detalle ? "Ocultar desglose" : "Ver desglose"}
+          </Texto>
+        </Pressable>
+        {detalle ? (
+          <View style={{ gap: 2 }}>
+            <Fila izq={`Alquiler (${plural(r.dias, "día", "días")})`} der={pesos(r.alquiler)} />
+            <Fila izq="Transporte" der={r.modalidad === "retiro" ? "Retiro en bodega" : pesos(r.transporte)} />
+            {Number(r.tecnico) > 0 ? <Fila izq="Técnico" der={pesos(r.tecnico)} /> : null}
+          </View>
+        ) : null}
+      </View>
+
+      <View style={estilos.sep} />
+
+      {error ? <Aviso tono="mal" texto={error} /> : null}
+      <View style={{ gap: 8 }}>
+        {r.estado === "pendiente" ? (
+          <>
+            <Responder id={r.id} onListo={onCambio} />
+            <Boton titulo="Descargar cotización en PDF" tipo="enlace" deshabilitado={ocupado} onPress={bajarPDF} />
+          </>
+        ) : (
+          <>
+            {!futura && RENTADA.includes(r.estado) ? <CalificarCliente reservaId={r.id} nombre={perfil?.nombre || r.cliente_nombre || ""} onListo={onCambio} /> : null}
+            <Boton titulo="Descargar cotización en PDF" tipo="secundario" bloque deshabilitado={ocupado} onPress={bajarPDF} />
+          </>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -289,6 +382,7 @@ const estilos = StyleSheet.create({
   cabeza: { flexDirection: "row", alignItems: "center", gap: 8 },
   codigo: { fontFamily: fuente[700], fontSize: 13, color: color.tinta, letterSpacing: 0.5 },
   precio: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: color.superficie2, borderRadius: radio.md, padding: 12 },
+  sep: { height: 1, backgroundColor: color.linea },
   nota: { fontStyle: "italic", color: color.suave, fontSize: 14 },
   detalle: { gap: 2, borderTopWidth: 1, borderTopColor: color.linea, paddingTop: 8 },
   calificar: { gap: 10, backgroundColor: color.acentoSuave, borderRadius: radio.md, padding: 14 },

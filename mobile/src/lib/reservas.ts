@@ -25,14 +25,14 @@ export type ReservaFila = {
   cliente_nombre: string;
   compania_id: string;
   creado: string;
-  companias: { nombre: string; zona: string | null; direccion_bodega: string | null } | null;
+  companias: { nombre: string; zona: string | null; direccion_bodega: string | null; horario_bodega: string | null } | null;
   reserva_items: { equipo_id: string; nombre: string; cantidad: number; precio_dia: number }[];
 };
 
 export const SELECT_RESERVA =
   "id, codigo, estado, entrega, recogida, dias, modalidad, lugar_nombre, lugar_direccion, distancia_km, con_tecnico, " +
   "alquiler, transporte, tecnico, nota, motivo_rechazo, cliente_nombre, compania_id, creado, " +
-  "companias(nombre, zona, direccion_bodega), reserva_items(equipo_id, nombre, cantidad, precio_dia)";
+  "companias(nombre, zona, direccion_bodega, horario_bodega), reserva_items(equipo_id, nombre, cantidad, precio_dia)";
 
 // Precio de referencia de la BETA: alquiler + transporte + técnico.
 export const referencia = (r: Pick<ReservaFila, "alquiler" | "transporte" | "tecnico">) =>

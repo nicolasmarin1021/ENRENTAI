@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Platform, StyleSheet, Switch, View } from "react-native";
 import { useCatalogo, type CompaniaPublica, type EquipoPublico } from "@/lib/catalogo";
+import { compartirCotizacion, type DatosCotizacion } from "@/lib/cotizacion";
 import { aISO, diasDeRenta, pesos, plural, textoFecha } from "@/lib/formato";
 import { cotizar, textoKm } from "@/lib/geo";
 import { usePedido, type ItemRider } from "@/lib/pedido";
@@ -14,14 +15,15 @@ import { Icono } from "@/ui/iconos";
 import { color } from "@/tema";
 
 type Linea = { i: ItemRider; e: EquipoPublico };
-type Resultado = { compania: string; codigo?: string; whatsapp?: string; mensaje?: string; error?: string };
+type Resultado = { compania: string; codigo?: string; whatsapp?: string; mensaje?: string; error?: string; pdf?: DatosCotizacion };
 
 // Tu rider: la lista de equipos para un show. En la BETA cada compañía recibe su propia
 // solicitud por WhatsApp; el precio final y el pago se acuerdan con ella.
 export default function Rider() {
   const { catalogo } = useCatalogo();
   const { pedido, guardar, libres, cambiar, recargarOcupadas } = usePedido();
-  const { usuario } = useSesion();
+  const { usuario, nombre: nombreCliente } = useSesion();
+  const [errorPdf, setErrorPdf] = useState("");
   const [resultados, setResultados] = useState<Resultado[]>([]);
   const [enviando, setEnviando] = useState<string | null>(null);
   const dias = diasDeRenta(pedido.entrega, pedido.recogida);
@@ -61,6 +63,28 @@ export default function Rider() {
   const falta = (g: Grupo) => g.lineas.some(({ i, e }) => i.cantidad > libres(e));
   const setOpcion = (cid: string, cambio: Partial<{ modalidad: "entrega" | "retiro"; tecnico: boolean }>, actual: Grupo["op"]) =>
     guardar((p) => ({ ...p, opciones: { ...p.opciones, [cid]: { ...actual, ...cambio } } }));
+
+  // Los datos de la cotización formal (PDF) de una compañía, tal como está el rider ahora.
+  const datosPDF = (g: Grupo, numero?: string): DatosCotizacion => ({
+    numero,
+    cliente: nombreCliente ?? "",
+    compania: { nombre: g.c.nombre, zona: g.c.zona, direccionBodega: g.c.direccion_bodega, horario: g.c.horario_bodega },
+    evento: {
+      lugar: lugar!.nombre,
+      direccion: lugar!.direccion ?? null,
+      entrega: aISO(pedido.entrega),
+      recogida: aISO(pedido.recogida),
+      dias,
+      modalidad: g.modalidad,
+      distanciaKm: g.cobro.km,
+    },
+    items: g.lineas.map(({ i, e }) => ({ nombre: e.nombre, cantidad: i.cantidad, precioDia: e.precio_dia })),
+    tecnico: g.cobro.tecnico > 0 ? { nombre: g.c.tecnico_nombre ?? "Técnico", valor: g.cobro.tecnico } : null,
+    cobro: { alquiler: g.cobro.alquiler, transporte: g.cobro.transporte, tecnico: g.cobro.tecnico },
+  });
+  async function bajarPDF(d: DatosCotizacion) {
+    setErrorPdf(await compartirCotizacion(d));
+  }
 
   // Crea la solicitud en ENRENTA y abre WhatsApp con el mensaje ya escrito para esa compañía.
   async function pedirCotizacion(g: Grupo) {
@@ -102,7 +126,7 @@ export default function Rider() {
       nota: pedido.nota,
     });
     if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setResultados((r) => [...otros(r), { compania: g.c.nombre, codigo: d.codigo, whatsapp: d.whatsapp, mensaje }]);
+    setResultados((r) => [...otros(r), { compania: g.c.nombre, codigo: d.codigo, whatsapp: d.whatsapp, mensaje, pdf: datosPDF(g, d.codigo) }]);
     // Los equipos de esa compañía salen del rider: ya quedaron en la solicitud.
     guardar((p) => {
       const opciones = { ...p.opciones };
@@ -119,8 +143,8 @@ export default function Rider() {
         titulo="Tu rider"
         sub={
           grupos.length
-            ? `${plural(unidades, "unidad", "unidades")} de ${plural(grupos.length, "compañía", "compañías")} para ${lugar?.nombre}. A cada compañía le pides la cotización por WhatsApp.`
-            : "Aquí armas la lista de equipos para un show. A cada compañía le pides la cotización por WhatsApp."
+            ? `${plural(unidades, "unidad", "unidades")} de ${plural(grupos.length, "compañía", "compañías")} para ${lugar?.nombre}. Agendas con cada compañía por separado.`
+            : "Aquí armas la lista de equipos para un show. Agendas con cada compañía por separado."
         }
       />
 
@@ -129,6 +153,7 @@ export default function Rider() {
           <Aviso key={r.compania} tono="ok" texto={`Solicitud ${r.codigo} lista para ${r.compania}. Envía el mensaje en WhatsApp para que te responda.`}>
             <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
               <Boton titulo="Abrir de nuevo" tipo="primario" chico onPress={() => abrirWhatsApp(r.whatsapp!, r.mensaje!)} />
+              {r.pdf ? <Boton titulo="Cotización en PDF" tipo="secundario" chico onPress={() => bajarPDF(r.pdf!)} /> : null}
               <Boton titulo="Mis solicitudes" tipo="secundario" chico onPress={() => router.navigate("/solicitudes")} />
             </View>
           </Aviso>
@@ -136,6 +161,8 @@ export default function Rider() {
           <Aviso key={r.compania} tono="mal" texto={`${r.compania}: ${r.error}`} />
         ),
       )}
+
+      {errorPdf ? <Aviso tono="mal" texto={errorPdf} /> : null}
 
       {huerfanos.length > 0 ? (
         <Aviso tono="aviso" texto={huerfanos.length === 1 ? "Un equipo de tu rider ya no está publicado." : `${huerfanos.length} equipos de tu rider ya no están publicados.`}>
@@ -222,7 +249,7 @@ export default function Rider() {
 
               {falta(g) ? <Aviso tono="aviso" texto="Pediste más unidades de las que están libres en tus fechas. Ajusta las cantidades." /> : null}
               <Boton
-                titulo={usuario ? "Cotizar" : "Entra para cotizar"}
+                titulo={usuario ? "Agendar" : "Entra para agendar"}
                 tipo="primario"
                 bloque
                 icono={<Icono n="enviar" tam={18} tinta="#FFFFFF" grosor={2} />}
@@ -230,6 +257,7 @@ export default function Rider() {
                 deshabilitado={falta(g) || (enviando !== null && enviando !== g.c.id)}
                 onPress={() => pedirCotizacion(g)}
               />
+              <Boton titulo="Cotización en PDF" tipo="secundario" bloque deshabilitado={falta(g)} onPress={() => bajarPDF(datosPDF(g))} />
             </Tarjeta>
           ))}
 
