@@ -164,11 +164,13 @@ export function ExplorarEquipos({ catalogo, categorias }: { catalogo: Catalogo; 
     const marcadores: Marcador[] = porCompania.map((lista) => {
       const c = lista[0].c;
       const algoLibre = !conFechas || lista.some((x) => rider.libres(x.e) > 0);
+      // El marcador muestra la referencia disponible primero (un equipo con unidades libres), no cantidades.
+      const primero = (conFechas ? lista.find((x) => rider.libres(x.e) > 0) : null) ?? lista[0];
       return {
         id: c.id,
         lat: c.lat,
         lng: c.lng,
-        texto: buscado ? corto(lista[0].e.nombre) + (lista.length > 1 ? ` +${lista.length - 1}` : "") : plural(lista.length, "equipo", "equipos"),
+        texto: corto(primero.e.nombre) + (lista.length > 1 ? ` +${lista.length - 1}` : ""),
         titulo: `${c.nombre}: ${plural(lista.length, "equipo", "equipos")}`,
         nivel: algoLibre ? "alto" : "nada",
         activo: c.id === sel,

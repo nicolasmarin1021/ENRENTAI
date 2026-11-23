@@ -16,6 +16,7 @@ import { costoTransporte, distanciaKm, textoKm } from "@/lib/geo";
 import { pesos } from "@/lib/medellin";
 import { useEsAngosto } from "@/lib/pantalla";
 import { conCantidad, diasDeRenta, type GuardarPedido, type Necesidad, type Pedido } from "@/lib/pedido";
+import { nombreCorto, referenciaPara, textoRef, type Referencia } from "@/lib/referencias";
 import { textoResumen } from "@/lib/resenas";
 
 type Paso = 1 | 2 | 3;
@@ -100,16 +101,20 @@ export function VistaMapa({
         const pool = exactos.length ? exactos : alternativas;
         const l = pool.reduce((a, e) => a + libres(e), 0);
         const nivel: Nivel = l >= necFoco.cantidad ? "alto" : l > 0 ? "medio" : "nada";
-        lista.push({ ...base, texto: String(l), sub: `${textoKm(dist)} · ${l} libres`, nivel, cuenta: l });
+        // El marcador muestra la referencia (el equipo que tiene para eso), no cuántas unidades hay.
+        const ref = referenciaPara(necFoco, c, libres);
+        lista.push({ ...base, texto: ref ? textoRef(ref) : "Sin cupo", sub: `${textoKm(dist)} · ${ref ? textoRef(ref, 40) : "sin stock en tus fechas"}`, nivel, cuenta: l });
       } else if (necesidades.length) {
         const cubiertas = necesidades.filter((n) => {
           const { exactos, alternativas } = equiposPara(n, c.equipos);
           return (exactos.length ? exactos : alternativas).some((e) => libres(e) > 0);
         }).length;
         const nivel: Nivel = cubiertas === necesidades.length ? "alto" : cubiertas ? "medio" : "nada";
+        const refs = necesidades.map((n) => referenciaPara(n, c, libres)).filter((r): r is Referencia => r !== null);
+        const principal = refs.find((r) => r.exacto) ?? refs[0];
         lista.push({
           ...base,
-          texto: `${cubiertas}/${necesidades.length}`,
+          texto: principal ? textoRef(principal) + (refs.length > 1 ? ` +${refs.length - 1}` : "") : "Sin cupo",
           sub: `${textoKm(dist)} · ${cubiertas} de ${necesidades.length} de tu pedido`,
           nivel,
           cuenta: cubiertas,
@@ -120,7 +125,16 @@ export function VistaMapa({
         const l = eqs.reduce((a, e) => a + libres(e), 0);
         const total = eqs.reduce((a, e) => a + e.unidades, 0);
         const nivel: Nivel = l === 0 ? "nada" : l / total >= 0.5 ? "alto" : "medio";
-        lista.push({ ...base, texto: String(l), sub: `${textoKm(dist)} · ${l} libres`, nivel, cuenta: l });
+        // Referencia: el primer equipo con unidades libres (y cuántos más tiene), no la cantidad.
+        const conCupo = eqs.filter((e) => libres(e) > 0);
+        const nombres = conCupo.length ? conCupo : eqs;
+        lista.push({
+          ...base,
+          texto: nombreCorto(nombres[0].nombre) + (nombres.length > 1 ? ` +${nombres.length - 1}` : ""),
+          sub: `${textoKm(dist)} · ${nombres[0].nombre}`,
+          nivel,
+          cuenta: l,
+        });
       }
     }
     return lista.sort((a, b) => b.cuenta - a.cuenta || a.dist - b.dist);
