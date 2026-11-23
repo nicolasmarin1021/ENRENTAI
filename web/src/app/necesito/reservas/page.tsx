@@ -30,7 +30,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/necesito/reservas">, "se
   if (!s) {
     return (
       <div className="card">
-        <p>Entra con tu correo para ver tus solicitudes.</p>
+        <p>Entra a tu cuenta para ver tus solicitudes.</p>
         <Link href="/necesito" className="btn primary">Entrar</Link>
       </div>
     );

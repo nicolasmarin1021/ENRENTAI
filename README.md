@@ -51,7 +51,7 @@ Luego abre http://localhost:3000.
 4. En **Authentication → URL Configuration**, pon `http://localhost:3000` como *Site URL* y agrega `http://localhost:3000/**` en *Redirect URLs*.
 5. Reinicia `npm run dev` para que tome las variables nuevas (en Windows PowerShell usa `npm.cmd run dev`).
 
-La entrada a ENRENTA es sin contraseña: llega un correo con un enlace (y, con plantillas propias, también un código de 6 dígitos).
+La entrada a ENRENTA es con correo y contraseña. Crear cuenta pide nombre completo, celular, correo y contraseña; el correo que envía Supabase solo sirve para confirmar (activar) la cuenta, no para obtener una contraseña. Las cuentas antiguas, creadas sin contraseña, entran con un enlace al correo.
 
 > **Correos en pruebas:** se usan los correos que trae Supabase, en inglés y solo con enlace. Mandan pocos correos por hora y únicamente a los miembros de tu equipo en Supabase, así que prueba con el correo de tu cuenta de Supabase y abre el enlace en el mismo navegador donde lo pediste.
 >

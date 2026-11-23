@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { BotonSalir, EntrarConCodigo, FormNombre } from "@/components/entrar";
+import { BotonSalir, EntrarConClave, FormNombre } from "@/components/entrar";
 import { getSesion } from "@/lib/sesion";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { AVISOS_ENLACE } from "@/lib/enlace";
@@ -28,7 +28,7 @@ function Titulo({ nombre }: { nombre?: string }) {
       <p className="lead">
         {nombre
           ? "Arma tu pedido, revisa disponibilidad en el mapa y sigue tus reservas."
-          : "Con tu cuenta pagas, sigues tus reservas y chateas con las compañías."}
+          : "Con tu cuenta agendas, guardas equipos y le preguntas a las compañías."}
       </p>
     </>
   );
@@ -79,7 +79,7 @@ async function Entrada({ searchParams }: Pick<PageProps<"/necesito">, "searchPar
       {typeof sp.enlace === "string" && AVISOS_ENLACE[sp.enlace] && (
         <p className="form-err" role="alert">{AVISOS_ENLACE[sp.enlace]}</p>
       )}
-      <EntrarConCodigo modo="necesito" />
+      <EntrarConClave modo="necesito" />
       <Link href="/explorar" className="link-btn" style={{ justifySelf: "center" }}>
         Explorar sin cuenta por ahora
       </Link>

@@ -1,4 +1,4 @@
-// Marca que este navegador pidió un código o enlace de entrada (dura un día, lo que el enlace).
+// Marca que este navegador pidió un correo de confirmación o un enlace de entrada (dura un día, lo que el enlace).
 // /auth/confirmar solo acepta el enlace del correo si la encuentra (ver esa ruta).
 export const COOKIE_ENLACE = "enrenta_enlace";
 
@@ -9,6 +9,6 @@ export function marcarEnlacePedido() {
 
 // Avisos de la portada de entrada según cómo terminó el enlace del correo.
 export const AVISOS_ENLACE: Record<string, string> = {
-  vencido: "Ese enlace ya venció o ya se usó. Pide un código nuevo.",
-  otro: "Por seguridad, abre el enlace en el mismo navegador donde pediste el código, o escribe el código del correo.",
+  vencido: "No pudimos abrir tu sesión con ese enlace. Si ya confirmaste tu correo, entra con tu contraseña.",
+  otro: "Por seguridad, abre el enlace en el mismo navegador donde lo pediste. Si ya confirmaste tu correo, entra con tu contraseña.",
 };

@@ -32,7 +32,7 @@ El modelo completo (pagos, depósitos) está guardado en la rama `modelo-full` y
 
 ## Detalles que ya se decidieron
 - Entrada en la app: correo + contraseña (registro con nombre, celular, correo y contraseña; Supabase confirma
-  por correo). La web sigue con código al correo.
+  por correo). La web entra igual: correo + contraseña, registro completo y el correo solo confirma la cuenta.
 - La ubicación de cada compañía (pin en Tarifas) es la misma del mapa de Buscar equipos y Explorar.
 - Chat interno (app): el cliente pregunta a una compañía sin cotizar (no aparta equipos) con «Hacer una pregunta»;
   bandeja en `mensajes` (acceso en Mis solicitudes y en el Panel), conversación en `chat/[id]`. La web también lo tiene:

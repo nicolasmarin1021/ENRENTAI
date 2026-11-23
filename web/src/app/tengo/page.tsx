@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { BotonSalir, EntrarConCodigo, FormNombre } from "@/components/entrar";
+import { BotonSalir, EntrarConClave, FormNombre } from "@/components/entrar";
 import { getSesion } from "@/lib/sesion";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { AVISOS_ENLACE } from "@/lib/enlace";
@@ -28,7 +28,7 @@ function Titulo({ hola }: { hola?: string }) {
       <p className="lead">
         {hola
           ? "Tu panel, tu inventario y tus mensajes te esperan."
-          : "Publica tu inventario, responde solicitudes y coordina entregas en Medellín."}
+          : "Publica tu inventario, responde solicitudes y recibe cotizaciones en Medellín."}
       </p>
     </>
   );
@@ -94,7 +94,7 @@ async function Entrada({ searchParams }: Pick<PageProps<"/tengo">, "searchParams
       {typeof sp.enlace === "string" && AVISOS_ENLACE[sp.enlace] && (
         <p className="form-err" role="alert">{AVISOS_ENLACE[sp.enlace]}</p>
       )}
-      <EntrarConCodigo modo="tengo" />
+      <EntrarConClave modo="tengo" />
       <p className="fine">
         Después de entrar registras la bodega y tu inventario. ENRENTA revisa los datos antes de mostrar el sello de
         compañía verificada.

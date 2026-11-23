@@ -284,7 +284,7 @@ export function RiderVista({
                         </button>
                       ) : (
                         <Link href="/necesito" className="btn primary">
-                          Entra con tu correo para agendar
+                          Entra a tu cuenta para agendar
                         </Link>
                       )
                     }

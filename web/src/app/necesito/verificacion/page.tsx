@@ -21,7 +21,7 @@ async function Contenido() {
   if (!s) {
     return (
       <div className="card">
-        <p>Entra con tu correo para verificar tu identidad.</p>
+        <p>Entra a tu cuenta para verificar tu identidad.</p>
         <Link href="/necesito" className="btn primary">Entrar</Link>
       </div>
     );
