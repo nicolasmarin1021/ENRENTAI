@@ -7,7 +7,7 @@ import { color, fuente } from "@/tema";
 
 // Pestañas de abajo (las nativas del iPhone). Cambian según el modo:
 // cliente → Buscar equipos (con su subpanel Explorar), Guardados, Rider y Solicitudes ·
-// compañía → Panel, Inventario y Tarifas. Cuenta siempre.
+// compañía → Panel, Inventario y Generalidades. Cuenta siempre.
 export default function Pestanas() {
   const { modo } = useSesion();
   const { pedido } = usePedido();
@@ -53,7 +53,7 @@ export default function Pestanas() {
         <NativeTabs.Trigger.Icon sf={{ default: "shippingbox", selected: "shippingbox.fill" }} md="inventory_2" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="tarifas" hidden={cliente}>
-        <NativeTabs.Trigger.Label>Tarifas</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Generalidades</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "dollarsign.circle", selected: "dollarsign.circle.fill" }} md="payments" />
       </NativeTabs.Trigger>
 

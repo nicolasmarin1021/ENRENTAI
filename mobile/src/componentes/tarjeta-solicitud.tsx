@@ -4,9 +4,9 @@ import { fechaCO, pesos, plural, rangoCO } from "@/lib/formato";
 import { perfilDeSolicitud, type PerfilCliente } from "@/lib/perfil";
 import { ESTADOS_RESERVA, RENTADA, referencia, type ReservaFila } from "@/lib/reservas";
 import { mensajeError, supabase } from "@/lib/supabase";
-import { abrirWhatsApp } from "@/lib/whatsapp";
+import { usePreguntar } from "@/lib/chat";
 import { Aviso, Boton, Campo, Etiqueta, Fila, Tarjeta, Texto } from "@/ui/base";
-import { Estrellas, IconoWhatsApp } from "@/ui/iconos";
+import { Estrellas, Icono } from "@/ui/iconos";
 import { color, fuente, radio } from "@/tema";
 import { CalificarCliente } from "./calificar-cliente";
 import { TarjetaPerfil } from "./perfil-cliente";
@@ -64,17 +64,12 @@ export function TarjetaSolicitud({
       : `Retiro en bodega${r.companias?.direccion_bodega ? ` (${r.companias.direccion_bodega})` : ""} el ${fechaCO(r.entrega)} · devolución ${fechaCO(r.recogida)}`) +
     (r.con_tecnico ? " · con técnico" : "");
 
-  async function escribir() {
-    setOcupado(true);
-    setError("");
-    const { data, error: e } = await supabase.rpc("whatsapp_de_solicitud", { p_id: r.id });
-    setOcupado(false);
-    if (e || typeof data !== "string" || !data) return setError(mensajeError(e, "No encontramos el WhatsApp de la compañía."));
-    abrirWhatsApp(data, `Hola ${r.companias?.nombre ?? ""}, te escribo por la solicitud ${r.codigo} de ENRENTA.`).catch(() => {});
-  }
+  // Conversar con el proveedor por el chat interno de ENRENTA.
+  const chat = usePreguntar();
+  const conversar = () => chat.preguntar(r.compania_id, r.companias?.nombre ?? "Compañía", `Hola, te escribo por la solicitud ${r.codigo}: `);
 
   function cancelar() {
-    confirmar("¿Cancelar la solicitud?", `La compañía verá que cancelaste ${r.codigo}.`, "Cancelar solicitud", async () => {
+    confirmar("¿Cancelar la solicitud?", `Se quitará de las solicitudes activas de la compañía y quedará en tu historial como cancelada (${r.codigo}).`, "Cancelar solicitud", async () => {
       setOcupado(true);
       const { error: e } = await supabase.rpc("cancelar_reserva", { p_id: r.id });
       setOcupado(false);
@@ -168,7 +163,7 @@ export function TarjetaSolicitud({
 
       <View style={{ gap: 8 }}>
         {vista === "cliente" && ["pendiente", "confirmada"].includes(r.estado) ? (
-          <Boton titulo="Escribir por WhatsApp" tipo="whatsapp" bloque icono={<IconoWhatsApp />} cargando={ocupado} onPress={escribir} />
+          <Boton titulo="Conversar con proveedor" tipo="primario" bloque icono={<Icono n="chat" tam={18} tinta="#FFFFFF" grosor={2} />} cargando={chat.abriendo} onPress={conversar} />
         ) : null}
         {puedeCalificar ? <Calificar reservaId={r.id} compania={r.companias?.nombre ?? "la compañía"} inicial={resena} onListo={onCambio} /> : null}
         {vista === "compania" && r.estado === "pendiente" ? <Responder id={r.id} onListo={onCambio} /> : null}
@@ -176,8 +171,9 @@ export function TarjetaSolicitud({
           <CalificarCliente reservaId={r.id} nombre={perfil?.nombre || r.cliente_nombre || ""} onListo={onCambio} />
         ) : null}
         {vista === "cliente" && futura && (r.estado === "pendiente" || r.estado === "confirmada") ? (
-          <Boton titulo="Cancelar solicitud" tipo="peligro" chico deshabilitado={ocupado} onPress={cancelar} />
+          <Boton titulo="Cancelar solicitud" tipo="peligro" bloque deshabilitado={ocupado} onPress={cancelar} />
         ) : null}
+        {chat.error ? <Aviso tono="mal" texto={chat.error} /> : null}
       </View>
     </Tarjeta>
   );

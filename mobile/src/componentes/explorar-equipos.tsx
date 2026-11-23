@@ -290,7 +290,7 @@ function FilaExplorar({
       ) : null}
       <View style={[estilos.fila, !primera && !nombreCat && estilos.linea]}>
         <Pressable
-          onPress={() => router.push({ pathname: "/equipo/[id]", params: { id: e.id } })}
+          onPress={() => router.push({ pathname: "/compania/[id]", params: { id: c.id, equipo: e.id } })}
           style={({ pressed }) => [estilos.filaToque, pressed && { opacity: 0.6 }]}
           accessibilityRole="button"
           accessibilityLabel={`Ver ficha de ${e.nombre}, de ${c.nombre}`}

@@ -1,6 +1,8 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
+import { AccesoMensajes } from "@/componentes/acceso-mensajes";
 import { TarjetaSolicitud, type MiResena } from "@/componentes/tarjeta-solicitud";
+import { tituloDiaCO } from "@/lib/formato";
 import { esActiva, RENTADA, SELECT_RESERVA, type ReservaFila } from "@/lib/reservas";
 import { useSesion } from "@/lib/sesion";
 import { supabase } from "@/lib/supabase";
@@ -60,8 +62,10 @@ export default function Solicitudes() {
     );
   }
 
-  const activas = filas.filter((r) => esActiva(r, ahora));
-  const pasadas = filas.filter((r) => !esActiva(r, ahora)).reverse();
+  // Por el día en que se hizo la solicitud: la más reciente primero (Hoy, Ayer, fechas anteriores…).
+  const masReciente = (a: ReservaFila, b: ReservaFila) => b.creado.localeCompare(a.creado);
+  const activas = filas.filter((r) => esActiva(r, ahora)).sort(masReciente);
+  const pasadas = filas.filter((r) => !esActiva(r, ahora)).sort(masReciente);
   const lista = ver === "activas" ? activas : pasadas;
   const sinCalificar = pasadas.some((r) => RENTADA.includes(r.estado) && !resenas.has(r.id));
 
@@ -71,6 +75,7 @@ export default function Solicitudes() {
         titulo="Mis solicitudes"
         sub={`Las cotizaciones que pediste por WhatsApp${nombre ? `, ${nombre}` : ""}. Cuando la compañía marca una como rentada, el equipo queda apartado para ti.`}
       />
+      <AccesoMensajes lado="cliente" />
       {sinCalificar && ver === "activas" ? (
         <Aviso tono="acento" texto="Tienes rentas que ya terminaron sin calificar. Califica a la compañía para ayudar a otros clientes.">
           <Boton titulo="Ver historial" chico tipo="secundario" onPress={() => setVer("historial")} />
@@ -88,8 +93,11 @@ export default function Solicitudes() {
       {cargando && !filas.length ? (
         <Cargando texto="Cargando tus solicitudes…" />
       ) : lista.length ? (
-        lista.map((r) => (
-          <TarjetaSolicitud key={r.id} r={r} vista="cliente" resena={resenas.get(r.id) ?? null} ahora={ahora} onCambio={cargar} />
+        lista.map((r, i) => (
+          <Fragment key={r.id}>
+            {i === 0 || tituloDiaCO(lista[i - 1].creado, ahora) !== tituloDiaCO(r.creado, ahora) ? <Texto v="etiqueta">{tituloDiaCO(r.creado, ahora)}</Texto> : null}
+            <TarjetaSolicitud r={r} vista="cliente" resena={resenas.get(r.id) ?? null} ahora={ahora} onCambio={cargar} />
+          </Fragment>
         ))
       ) : (
         <Tarjeta>

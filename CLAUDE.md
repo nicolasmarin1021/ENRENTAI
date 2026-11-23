@@ -19,7 +19,8 @@ El modelo completo (pagos, depósitos) está guardado en la rama `modelo-full` y
     Compañía: `panel`, `inventario`, `tarifas`. Siempre: `cuenta`. Selector Necesito | Tengo arriba a la derecha.
   - UI propia en `src/ui/base.tsx` (Texto, Boton, Campo, Chip, Aviso, Tarjeta, Pantalla…), colores en `src/tema.ts`.
   - Datos en `src/lib/` (catalogo, pedido, sesion, perfil, calificaciones, verificacion…). Fechas a mano (Colombia, UTC−5).
-- `supabase/migrations/` — SQL 0001 a 0013 (todos ya ejecutados). La dueña los ejecuta en el SQL Editor de Supabase. Si falta un SQL, la app muestra «Falta ejecutar el SQL 00XX…».
+- `supabase/migrations/` — SQL 0001 a 0014. La dueña los ejecuta en el SQL Editor de Supabase (0001 a 0013 ya
+  ejecutados; 0014, preguntas por chat, puede estar pendiente). Si falta un SQL, la app muestra «Falta ejecutar el SQL 00XX…».
 
 ## Comandos (Windows)
 - PowerShell bloquea `npm.ps1`: usar `npm.cmd` / `npx.cmd`. En Bash: `export PATH="/c/Program Files/nodejs:$PATH"`.
@@ -33,6 +34,8 @@ El modelo completo (pagos, depósitos) está guardado en la rama `modelo-full` y
 - Entrada en la app: correo + contraseña (registro con nombre, celular, correo y contraseña; Supabase confirma
   por correo). La web sigue con código al correo.
 - La ubicación de cada compañía (pin en Tarifas) es la misma del mapa de Buscar equipos y Explorar.
+- Chat interno (app): el cliente pregunta a una compañía sin cotizar (no aparta equipos) con «Hacer una pregunta»;
+  bandeja en `mensajes` (acceso en Mis solicitudes y en el Panel), conversación en `chat/[id]`. La web aún no lo tiene.
 - En el mapa no se muestran precios sino referencias de equipo (exacto o «≈» equivalente).
 - La web ya tiene, como la app: subpaneles Buscar equipos | Explorar (`/explorar?vista=explorar`, lista o mapa),
   Guardados (♡, en el navegador, `/guardados`) y la verificación de identidad (`/necesito/verificacion`,

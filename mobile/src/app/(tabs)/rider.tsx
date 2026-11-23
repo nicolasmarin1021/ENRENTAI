@@ -10,7 +10,7 @@ import { useSesion } from "@/lib/sesion";
 import { mensajeError, supabase } from "@/lib/supabase";
 import { abrirWhatsApp, mensajeSolicitud } from "@/lib/whatsapp";
 import { Aviso, Boton, Campo, Cantidad, Encabezado, Fila, Pantalla, Segmentos, Tarjeta, Texto } from "@/ui/base";
-import { IconoWhatsApp } from "@/ui/iconos";
+import { Icono } from "@/ui/iconos";
 import { color } from "@/tema";
 
 type Linea = { i: ItemRider; e: EquipoPublico };
@@ -128,7 +128,7 @@ export default function Rider() {
         r.codigo ? (
           <Aviso key={r.compania} tono="ok" texto={`Solicitud ${r.codigo} lista para ${r.compania}. Envía el mensaje en WhatsApp para que te responda.`}>
             <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-              <Boton titulo="Abrir WhatsApp de nuevo" tipo="whatsapp" chico onPress={() => abrirWhatsApp(r.whatsapp!, r.mensaje!)} />
+              <Boton titulo="Abrir de nuevo" tipo="primario" chico onPress={() => abrirWhatsApp(r.whatsapp!, r.mensaje!)} />
               <Boton titulo="Mis solicitudes" tipo="secundario" chico onPress={() => router.navigate("/solicitudes")} />
             </View>
           </Aviso>
@@ -222,10 +222,10 @@ export default function Rider() {
 
               {falta(g) ? <Aviso tono="aviso" texto="Pediste más unidades de las que están libres en tus fechas. Ajusta las cantidades." /> : null}
               <Boton
-                titulo={usuario ? "Cotizar por WhatsApp" : "Entra para cotizar por WhatsApp"}
-                tipo="whatsapp"
+                titulo={usuario ? "Cotizar" : "Entra para cotizar"}
+                tipo="primario"
                 bloque
-                icono={<IconoWhatsApp />}
+                icono={<Icono n="enviar" tam={18} tinta="#FFFFFF" grosor={2} />}
                 cargando={enviando === g.c.id}
                 deshabilitado={falta(g) || (enviando !== null && enviando !== g.c.id)}
                 onPress={() => pedirCotizacion(g)}

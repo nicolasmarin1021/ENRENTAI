@@ -63,7 +63,7 @@ export default function Guardados() {
             {equipos.map(({ e, c }) => (
               <View key={e.id} style={{ width: ancho }}>
                 <Pressable
-                  onPress={() => router.push({ pathname: "/equipo/[id]", params: { id: e.id } })}
+                  onPress={() => router.push({ pathname: "/compania/[id]", params: { id: c.id, equipo: e.id } })}
                   accessibilityRole="button"
                   accessibilityLabel={`Ver ${e.nombre}`}
                   style={({ pressed }) => [{ gap: 6 }, pressed && { opacity: 0.8 }]}

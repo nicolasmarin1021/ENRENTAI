@@ -12,7 +12,8 @@ import { costoTransporte, cotizar, distanciaKm, textoKm } from "@/lib/geo";
 import { usePedido } from "@/lib/pedido";
 import { estimar, referenciaPara, textoRef } from "@/lib/referencias";
 import { supabase } from "@/lib/supabase";
-import { Fila, Texto } from "@/ui/base";
+import { usePreguntar } from "@/lib/chat";
+import { Aviso, Boton, Fila, Texto } from "@/ui/base";
 import { BotonGuardar, Corazon } from "@/ui/corazon";
 import { Estrellas, Icono, IconoCategoria } from "@/ui/iconos";
 import { color, fuente, margen, radio } from "@/tema";
@@ -38,6 +39,7 @@ export default function Compania() {
   const scroll = useRef<ScrollViewInstance>(null);
   const [yEquipos, setYEquipos] = useState(0);
   const [cabeceraSolida, setCabeceraSolida] = useState(false);
+  const chat = usePreguntar();
   const c = catalogo.companias.find((x) => x.id === id);
 
   useEffect(() => {
@@ -344,6 +346,22 @@ export default function Compania() {
             </View>
           </View>
 
+          {/* Preguntar antes de cotizar: chat interno, no crea solicitud ni aparta equipos. */}
+          <View style={{ gap: 8, marginTop: -6 }}>
+            <Boton
+              titulo="Hacer una pregunta"
+              tipo="secundario"
+              bloque
+              cargando={chat.abriendo}
+              icono={<Icono n="chat" tam={19} tinta={color.acento} />}
+              onPress={() => chat.preguntar(c.id, c.nombre, foco ? `Hola, tengo una pregunta sobre ${foco.nombre}: ` : undefined)}
+            />
+            <Texto v="fino" style={{ textAlign: "center" }}>
+              Pregunta antes de cotizar: no es una solicitud y no aparta equipos.
+            </Texto>
+            {chat.error ? <Aviso tono="mal" texto={chat.error} /> : null}
+          </View>
+
           {/* Servicios */}
           <View style={[{ gap: 18 }, estilos.linea]}>
             <Servicio
@@ -472,6 +490,20 @@ export default function Compania() {
                 : "por día · precio de referencia"}
             </Texto>
           </View>
+          <View style={{ alignItems: "center", gap: 4 }}>
+            <Pressable
+              onPress={() => chat.preguntar(c.id, c.nombre, foco ? `Hola, tengo una pregunta sobre ${foco.nombre}: ` : undefined)}
+              disabled={chat.abriendo}
+              style={({ pressed }) => [estilos.preguntar, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Hacer una pregunta a ${c.nombre}`}
+            >
+              <Icono n="chat" tam={22} tinta={color.acento} />
+            </Pressable>
+            <Texto v="fino" style={{ fontSize: 12 }}>
+              {chat.abriendo ? "Abriendo…" : "Preguntar"}
+            </Texto>
+          </View>
           <View style={{ alignItems: "center", gap: 4, maxWidth: 200 }}>
             <Pressable
               onPress={enRiderFoco ? irAlRider : agregarFoco}
@@ -512,6 +544,20 @@ export default function Compania() {
                 <Texto v="fino">{conPedido ? "No tiene lo que pediste libre en tus fechas" : "por día · precio de referencia"}</Texto>
               </>
             )}
+          </View>
+          <View style={{ alignItems: "center", gap: 4 }}>
+            <Pressable
+              onPress={() => chat.preguntar(c.id, c.nombre)}
+              disabled={chat.abriendo}
+              style={({ pressed }) => [estilos.preguntar, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Hacer una pregunta a ${c.nombre}`}
+            >
+              <Icono n="chat" tam={22} tinta={color.acento} />
+            </Pressable>
+            <Texto v="fino" style={{ fontSize: 12 }}>
+              {chat.abriendo ? "Abriendo…" : "Preguntar"}
+            </Texto>
           </View>
           <View style={{ alignItems: "center", gap: 4 }}>
             <Pressable
@@ -625,13 +671,23 @@ const estilos = StyleSheet.create({
     bottom: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 20,
+    gap: 10,
+    paddingHorizontal: 16,
     paddingTop: 14,
     backgroundColor: color.superficie,
     borderTopWidth: 1,
     borderTopColor: color.linea,
   },
   precio: { fontSize: 19, textDecorationLine: "underline", color: color.tinta },
-  accion: { backgroundColor: color.acento, height: 52, minWidth: 160, paddingHorizontal: 22, borderRadius: radio.pildora, alignItems: "center", justifyContent: "center" },
+  accion: { backgroundColor: color.acento, height: 52, minWidth: 140, paddingHorizontal: 18, borderRadius: radio.pildora, alignItems: "center", justifyContent: "center" },
+  preguntar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    borderColor: color.acento,
+    backgroundColor: color.acentoSuave,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

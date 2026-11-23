@@ -5,8 +5,9 @@ import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "re
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CATEGORIAS_RF, nombreEstado, urlFoto, useCatalogo, useEquipo } from "@/lib/catalogo";
 import { pesos } from "@/lib/formato";
+import { usePreguntar } from "@/lib/chat";
 import { usePedido } from "@/lib/pedido";
-import { Boton, Cantidad, Fila, Tarjeta, Texto } from "@/ui/base";
+import { Aviso, Boton, Cantidad, Fila, Tarjeta, Texto } from "@/ui/base";
 import { Corazon } from "@/ui/corazon";
 import { Icono, IconoCategoria } from "@/ui/iconos";
 import { color, margen, radio } from "@/tema";
@@ -20,6 +21,7 @@ export default function FichaEquipo() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [foto, setFoto] = useState(0);
+  const chat = usePreguntar();
 
   if (!hallado) {
     return (
@@ -72,6 +74,14 @@ export default function FichaEquipo() {
               {c.nombre}
               {c.zona ? ` · ${c.zona}` : ""}
             </Texto>
+            <Boton
+              titulo={chat.abriendo ? "Abriendo el chat…" : `Preguntar a ${c.nombre}`}
+              tipo="enlace"
+              icono={<Icono n="chat" tam={17} tinta={color.acento} />}
+              onPress={() => chat.preguntar(c.id, c.nombre, `Hola, tengo una pregunta sobre ${e.nombre}: `)}
+              style={{ alignSelf: "flex-start", marginTop: 2 }}
+            />
+            {chat.error ? <Aviso tono="mal" texto={chat.error} /> : null}
           </View>
 
           <Tarjeta style={{ gap: 4 }}>

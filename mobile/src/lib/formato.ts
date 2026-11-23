@@ -26,6 +26,13 @@ export function diaCO(iso: string | Date) {
   return `${DIAS[p.semana]} ${p.dia} ${MESES[p.mes]}`;
 }
 
+// Título de un día para agrupar: "Hoy", "Mañana", "Ayer" o "sáb 22 nov" (días de Medellín).
+export function tituloDiaCO(iso: string | Date, ahora: number) {
+  const dia = (t: number) => Math.floor((t + OFFSET_CO) / 86400000);
+  const d = dia(+new Date(iso)) - dia(ahora);
+  return d === 0 ? "Hoy" : d === 1 ? "Mañana" : d === -1 ? "Ayer" : diaCO(iso);
+}
+
 // "sáb 22 nov · 14:00"
 export function fechaCO(iso: string | Date) {
   const p = partesCO(new Date(iso));

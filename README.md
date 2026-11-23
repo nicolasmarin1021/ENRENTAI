@@ -45,7 +45,8 @@ Luego abre http://localhost:3000.
    (verificación de identidad opcional con revisión manual de un admin: cédula y selfie del cliente; NIT,
    RUT o Cámara de Comercio de la compañía; las fotos van a un bucket privado y se borran al revisarlas) y
    `0013_refuerzos_seguridad.sql` (el nombre verificado no se cambia desde la app y hay un límite de
-   solicitudes de cotización por cliente).
+   solicitudes de cotización por cliente) y `0014_preguntas_chat.sql` (el cliente puede preguntarle a una
+   compañía por el chat interno sin cotizar, con límites contra el spam).
    Para revisar verificaciones, tu cuenta debe tener `es_admin = true` en la tabla `perfiles`.
 4. En **Authentication → URL Configuration**, pon `http://localhost:3000` como *Site URL* y agrega `http://localhost:3000/**` en *Redirect URLs*.
 5. Reinicia `npm run dev` para que tome las variables nuevas (en Windows PowerShell usa `npm.cmd run dev`).

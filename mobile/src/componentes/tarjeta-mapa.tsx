@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { urlFoto, type CompaniaPublica, type EquipoPublico } from "@/lib/catalogo";
+import { usePreguntar } from "@/lib/chat";
 import { Texto } from "@/ui/base";
 import { Corazon } from "@/ui/corazon";
 import { Icono, IconoCategoria } from "@/ui/iconos";
@@ -34,6 +35,7 @@ export function TarjetaMapa({ d, ancho, onCerrar, flotante = false }: { d: Datos
   const altoFoto = Math.round(ancho * (flotante ? 0.52 : 0.62));
   const r = d.c.resenas;
   const e = d.equipo ?? null;
+  const chat = usePreguntar();
   const textoAbrir = e ? `Ver ${e.nombre}, de ${d.c.nombre}` : `Ver equipos de ${d.c.nombre}`;
   const calificacion =
     r && r.total > 0 ? (
@@ -91,49 +93,74 @@ export function TarjetaMapa({ d, ancho, onCerrar, flotante = false }: { d: Datos
         </View>
       </View>
 
-      <Pressable onPress={() => abrir(d)} style={estilos.info} accessibilityRole="button" accessibilityLabel={textoAbrir}>
-        {e ? (
-          <>
-            {/* Título: el equipo. Debajo: la compañía que lo tiene. */}
-            <Texto peso={600} style={{ fontSize: 17, lineHeight: 22 }} numberOfLines={2}>
-              {d.equivalente ? `≈ ${e.nombre}` : e.nombre}
-            </Texto>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Texto peso={500} style={{ flex: 1, fontSize: 14.5 }} tono={color.acento} numberOfLines={1}>
-                {d.c.nombre}
-                {d.c.verificada ? " ✓" : ""}
+      <View style={estilos.info}>
+        <Pressable onPress={() => abrir(d)} style={{ gap: 2 }} accessibilityRole="button" accessibilityLabel={textoAbrir}>
+          {e ? (
+            <>
+              {/* Título: el equipo. Debajo: la compañía que lo tiene. */}
+              <Texto peso={600} style={{ fontSize: 17, lineHeight: 22 }} numberOfLines={2}>
+                {d.equivalente ? `≈ ${e.nombre}` : e.nombre}
               </Texto>
-              {calificacion}
-            </View>
-            {d.linea1 ? (
-              <Texto v="fino" style={{ fontSize: 14 }} numberOfLines={1}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Texto peso={500} style={{ flex: 1, fontSize: 14.5 }} tono={color.acento} numberOfLines={1}>
+                  {d.c.nombre}
+                  {d.c.verificada ? " ✓" : ""}
+                </Texto>
+                {calificacion}
+              </View>
+              {d.linea1 ? (
+                <Texto v="fino" style={{ fontSize: 14 }} numberOfLines={1}>
+                  {d.linea1}
+                </Texto>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Texto peso={600} style={{ flex: 1, fontSize: 16.5 }} numberOfLines={1}>
+                  {d.c.nombre}
+                </Texto>
+                {calificacion}
+              </View>
+              <Texto peso={500} style={{ fontSize: 14.5 }} tono={d.apagada ? color.suave : color.acento} numberOfLines={1}>
                 {d.linea1}
               </Texto>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Texto peso={600} style={{ flex: 1, fontSize: 16.5 }} numberOfLines={1}>
-                {d.c.nombre}
-              </Texto>
-              {calificacion}
-            </View>
-            <Texto peso={500} style={{ fontSize: 14.5 }} tono={d.apagada ? color.suave : color.acento} numberOfLines={1}>
-              {d.linea1}
+            </>
+          )}
+          <Texto v="fino" style={{ fontSize: 14.5 }} numberOfLines={1}>
+            {d.linea2}
+          </Texto>
+        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 2 }}>
+          <Pressable onPress={() => abrir(d)} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={textoAbrir}>
+            <Texto style={{ fontSize: 15.5 }} tono={d.apagada ? color.suave : color.tinta}>
+              <Texto peso={700} style={{ fontSize: 15.5 }} tono={d.apagada ? color.suave : color.tinta}>
+                {d.precio}
+              </Texto>{" "}
+              {d.precioSub}
             </Texto>
-          </>
-        )}
-        <Texto v="fino" style={{ fontSize: 14.5 }} numberOfLines={1}>
-          {d.linea2}
-        </Texto>
-        <Texto style={{ fontSize: 15.5, marginTop: 2 }} tono={d.apagada ? color.suave : color.tinta}>
-          <Texto peso={700} style={{ fontSize: 15.5 }} tono={d.apagada ? color.suave : color.tinta}>
-            {d.precio}
-          </Texto>{" "}
-          {d.precioSub}
-        </Texto>
-      </Pressable>
+          </Pressable>
+          {/* Preguntarle a la compañía por el chat, sin cotizar (no aparta equipos). */}
+          <Pressable
+            onPress={() => chat.preguntar(d.c.id, d.c.nombre, e ? `Hola, tengo una pregunta sobre ${e.nombre}: ` : undefined)}
+            disabled={chat.abriendo}
+            hitSlop={6}
+            style={({ pressed }) => [estilos.preguntar, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Hacer una pregunta a ${d.c.nombre}`}
+          >
+            <Icono n="chat" tam={17} tinta={color.acento} />
+            <Texto peso={600} style={{ fontSize: 14 }} tono={color.acento}>
+              {chat.abriendo ? "Abriendo…" : "Preguntar"}
+            </Texto>
+          </Pressable>
+        </View>
+        {chat.error ? (
+          <Texto v="fino" tono={color.mal}>
+            {chat.error}
+          </Texto>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -170,4 +197,13 @@ const estilos = StyleSheet.create({
     justifyContent: "center",
   },
   info: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14, gap: 2 },
+  preguntar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: radio.pildora,
+    backgroundColor: color.acentoSuave,
+  },
 });

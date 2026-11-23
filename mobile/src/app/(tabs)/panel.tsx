@@ -1,13 +1,14 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "@/componentes/perfil-cliente";
+import { AccesoMensajes } from "@/componentes/acceso-mensajes";
 import { ConCompania } from "@/componentes/sin-compania";
 import { TarjetaSolicitud } from "@/componentes/tarjeta-solicitud";
 import { hoyCO, ocupacionDia, sumarDias } from "@/lib/agenda";
 import { esRentada, movimientos, useDatosCompania, type DatosCompania } from "@/lib/datos-compania";
-import { fechaCO, iniciales, pesos, rangoCO } from "@/lib/formato";
+import { fechaCO, iniciales, pesos, rangoCO, tituloDiaCO } from "@/lib/formato";
 import { promedioTexto, useCalificadas } from "@/lib/calificaciones";
 import { DIAS_PARA_CALIFICAR, lineaTrabajo, usePerfilesDeSolicitudes, type PerfilCliente } from "@/lib/perfil";
 import { referencia, RENTADA, type ReservaFila } from "@/lib/reservas";
@@ -66,13 +67,15 @@ export function PanelVista({ compania, perfiles, calificadas, equipos, reservas,
   const [abierta, setAbierta] = useState<ReservaFila | null>(null);
 
   const vigente = (r: ReservaFila) => Date.parse(r.recogida) >= ahora;
-  const pendientes = reservas.filter((r) => r.estado === "pendiente" && vigente(r));
-  const rentadas = reservas.filter((r) => esRentada(r) && vigente(r));
+  // Por el día en que el cliente hizo la solicitud: la más reciente primero.
+  const proximaPrimero = (a: ReservaFila, b: ReservaFila) => b.creado.localeCompare(a.creado);
+  const pendientes = reservas.filter((r) => r.estado === "pendiente" && vigente(r)).sort(proximaPrimero);
+  const rentadas = reservas.filter((r) => esRentada(r) && vigente(r)).sort(proximaPrimero);
   // Las rentadas que ya terminaron (últimos 60 días), las más recientes primero: para calificar al cliente.
   const limite = ahora - DIAS_PARA_CALIFICAR * 86400000;
   const terminadas = reservas
     .filter((r) => RENTADA.includes(r.estado) && !vigente(r) && Date.parse(r.recogida) >= limite)
-    .sort((a, b) => b.recogida.localeCompare(a.recogida));
+    .sort((a, b) => b.creado.localeCompare(a.creado));
   // Por calificar: rentadas cuya entrega ya pasó y que la compañía no ha calificado.
   const estadoCalif = (r: ReservaFila): "por" | "hecha" | null =>
     calificadas === null || !RENTADA.includes(r.estado) || Date.parse(r.entrega) > ahora ? null : calificadas.includes(r.id) ? "hecha" : "por";
@@ -91,6 +94,7 @@ export function PanelVista({ compania, perfiles, calificadas, equipos, reservas,
   return (
     <Pantalla refrescando={cargando && reservas.length > 0} onRefrescar={recargar}>
       <Encabezado titulo="Panel" sub={compania ? `${compania.nombre}${compania.verificada ? " · verificada" : ""}` : undefined} />
+      <AccesoMensajes lado="compania" />
       {error ? <Aviso tono="mal" texto={error} /> : null}
 
       {cargando && !reservas.length && !equipos.length ? (
@@ -173,11 +177,9 @@ export function PanelVista({ compania, perfiles, calificadas, equipos, reservas,
             )
           ) : pestana === "pendientes" ? (
             pendientes.length ? (
-              <View style={estilos.lista}>
-                {pendientes.map((r, i) => (
-                  <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />
-                ))}
-              </View>
+              <PorDia items={pendientes} ahora={ahora}>
+                {(r, i) => <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />}
+              </PorDia>
             ) : (
               <Vacio texto="No tienes solicitudes por confirmar. Cuando un cliente te pida una cotización, aparece aquí y te escribe por WhatsApp." />
             )
@@ -193,11 +195,9 @@ export function PanelVista({ compania, perfiles, calificadas, equipos, reservas,
                 </View>
               ) : null}
               {rentadas.length ? (
-                <View style={estilos.lista}>
-                  {rentadas.map((r, i) => (
-                    <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} calif={estadoCalif(r)} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />
-                  ))}
-                </View>
+                <PorDia items={rentadas} ahora={ahora}>
+                  {(r, i) => <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} calif={estadoCalif(r)} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />}
+                </PorDia>
               ) : (
                 <Vacio texto={terminadas.length ? "No tienes rentas en curso." : "Aquí verás las solicitudes que marcaste como rentadas hasta su fecha de recogida."} />
               )}
@@ -206,11 +206,9 @@ export function PanelVista({ compania, perfiles, calificadas, equipos, reservas,
                   <Texto v="etiqueta" style={{ marginTop: 4 }}>
                     Terminadas · últimos {DIAS_PARA_CALIFICAR} días
                   </Texto>
-                  <View style={estilos.lista}>
-                    {terminadas.map((r, i) => (
-                      <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} calif={estadoCalif(r)} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />
-                    ))}
-                  </View>
+                  <PorDia items={terminadas} ahora={ahora}>
+                    {(r, i) => <FilaSolicitud key={r.id} r={r} perfil={perfiles[r.id]} calif={estadoCalif(r)} primera={i === 0} onAbrir={() => setAbierta(r)} onListo={recargar} />}
+                  </PorDia>
                 </>
               ) : null}
             </>
@@ -232,6 +230,26 @@ export function PanelVista({ compania, perfiles, calificadas, equipos, reservas,
         </Ventana>
       ) : null}
     </Pantalla>
+  );
+}
+
+// Las solicitudes agrupadas día a día (Hoy, Mañana, fechas anteriores…), cada día con su título.
+function PorDia({ items, ahora, children }: { items: ReservaFila[]; ahora: number; children: (r: ReservaFila, i: number) => ReactNode }) {
+  const grupos: { titulo: string; filas: ReservaFila[] }[] = [];
+  for (const r of items) {
+    const titulo = tituloDiaCO(r.creado, ahora);
+    if (grupos.at(-1)?.titulo === titulo) grupos.at(-1)!.filas.push(r);
+    else grupos.push({ titulo, filas: [r] });
+  }
+  return (
+    <>
+      {grupos.map((g) => (
+        <View key={g.titulo} style={{ gap: 6 }}>
+          <Texto v="etiqueta">{g.titulo}</Texto>
+          <View style={estilos.lista}>{g.filas.map((r, i) => children(r, i))}</View>
+        </View>
+      ))}
+    </>
   );
 }
 

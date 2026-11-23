@@ -68,6 +68,8 @@ export default function Raiz() {
               <Stack.Screen name="verificacion" options={{ title: "Verificación" }} />
               <Stack.Screen name="admin-verificaciones" options={{ title: "Verificaciones" }} />
               <Stack.Screen name="equipo-editar/[id]" options={{ title: "Equipo" }} />
+              <Stack.Screen name="mensajes" options={{ title: "Mensajes" }} />
+              <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
             </Stack>
           </ThemeProvider>
           </GuardadosProvider>

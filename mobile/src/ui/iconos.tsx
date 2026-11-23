@@ -100,6 +100,8 @@ const UI: Record<string, string> = {
   bodega: "M3.5 10 12 4.5l8.5 5.5v10h-17zM7.5 20v-6.5h9V20M7.5 16.5h9",
   flechaDerecha: "M4 12h15M13 6l6 6-6 6",
   corazon: "M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z",
+  chat: "M20 14.5a2 2 0 0 1-2 2H8.5L4 20.5V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2zM8 9h8M8 12.5h5",
+  enviar: "M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z",
 };
 
 export function Icono({ n, tam = 20, tinta = color.tinta, grosor = 1.8 }: { n: keyof typeof UI; tam?: number; tinta?: string; grosor?: number }) {

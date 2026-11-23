@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ScrollView } from "react-native";
+import type { ReactNode } from "react";
+import { ScrollView, View } from "react-native";
 import { CamposEntrega, entregaAGuardar, validarEntrega, type DatosEntrega } from "@/componentes/entrega";
 import { ConCompania } from "@/componentes/sin-compania";
 import { useCatalogo } from "@/lib/catalogo";
@@ -10,6 +11,7 @@ import { normalizarWhatsApp, whatsappValido } from "@/lib/whatsapp";
 import { ZONAS } from "@/lib/zonas";
 import { Aviso, Boton, Campo, Cargando, Chip, Encabezado, Pantalla, Tarjeta, Texto } from "@/ui/base";
 import { Mapa } from "@/ui/mapa";
+import { color } from "@/tema";
 
 type Form = DatosEntrega & { whatsapp: string; direccion: string; horario: string; zona: string; pin: Punto | null };
 
@@ -22,8 +24,21 @@ const whatsappLocal = (n: string) => {
   return m ? `${m[1]} ${m[2]} ${m[3]}` : n;
 };
 
+// Una sección dentro de la tarjeta: título, una línea de ayuda y sus campos; una línea la separa de la anterior.
+function Seccion({ titulo, ayuda, linea, children }: { titulo: string; ayuda: string; linea?: boolean; children: ReactNode }) {
+  return (
+    <View style={[{ padding: 16, gap: 12 }, linea && { borderTopWidth: 1, borderTopColor: color.linea }]}>
+      <View style={{ gap: 2 }}>
+        <Texto v="subtitulo">{titulo}</Texto>
+        <Texto v="fino">{ayuda}</Texto>
+      </View>
+      {children}
+    </View>
+  );
+}
+
 export default function Tarifas() {
-  return <ConCompania titulo="Tarifas">{(cid) => <FormTarifas cid={cid} />}</ConCompania>;
+  return <ConCompania titulo="Generalidades">{(cid) => <FormTarifas cid={cid} />}</ConCompania>;
 }
 
 // Tarifas de referencia de la compañía: WhatsApp para cotizaciones, transporte, técnico y bodega.
@@ -48,7 +63,7 @@ export function FormTarifas({ cid }: { cid: string }) {
         .single(),
       supabase.from("companias_privado").select("whatsapp").eq("compania_id", cid).maybeSingle(),
     ]).then(([c, p]) => {
-      if (c.error || !c.data) return setError("No pudimos cargar tus tarifas. Revisa tu conexión.");
+      if (c.error || !c.data) return setError("No pudimos cargar tus datos. Revisa tu conexión.");
       const t = c.data as {
         cobertura_km: number; transporte_modo: "fijo" | "variable"; transporte_fijo: number; transporte_base: number; transporte_km: number;
         tecnico_nombre: string | null; tecnico_tarifa_dia: number | null; direccion_bodega: string | null; horario_bodega: string | null;
@@ -75,8 +90,8 @@ export function FormTarifas({ cid }: { cid: string }) {
   if (!f) {
     return (
       <Pantalla>
-        <Encabezado titulo="Tarifas" />
-        {error ? <Aviso tono="mal" texto={error} /> : <Cargando texto="Cargando tus tarifas…" />}
+        <Encabezado titulo="Generalidades" />
+        {error ? <Aviso tono="mal" texto={error} /> : <Cargando texto="Cargando tus datos…" />}
       </Pantalla>
     );
   }
@@ -118,7 +133,7 @@ export function FormTarifas({ cid }: { cid: string }) {
       supabase.from("companias_privado").update({ whatsapp: numero }).eq("compania_id", cid).select("compania_id"),
     ]);
     setOcupado(false);
-    if (t.error || !t.data?.length || c.error || !c.data?.length) return setError("No pudimos guardar tus tarifas. Revisa tu conexión e intenta de nuevo.");
+    if (t.error || !t.data?.length || c.error || !c.data?.length) return setError("No pudimos guardar tus cambios. Revisa tu conexión e intenta de nuevo.");
     setGuardado(true);
     // El mapa de Buscar equipos y Explorar se actualiza con la nueva ubicación.
     void recargarCatalogo();
@@ -128,58 +143,52 @@ export function FormTarifas({ cid }: { cid: string }) {
 
   return (
     <Pantalla>
-      <Encabezado titulo="Tarifas" sub="Tus precios de referencia: el cliente los ve al armar su rider y el valor final lo acuerdan por WhatsApp." />
-      <Tarjeta>
-        <Texto v="subtitulo">WhatsApp para cotizaciones</Texto>
-        <Texto v="fino">Aquí te escriben los clientes. Solo se le entrega a quien te pide una cotización.</Texto>
-        <Campo etiqueta="Número de WhatsApp" keyboardType="phone-pad" placeholder="300 123 4567" value={f.whatsapp} onChangeText={(v) => cambiar({ whatsapp: v })} autoComplete="tel" />
-      </Tarjeta>
-      <Tarjeta>
-        <Texto v="subtitulo">Entregas y técnico</Texto>
-        <CamposEntrega f={f} cambiar={cambiar} />
-        {f.tecnico.trim() && tecnico > 0 ? <Texto v="fino">El cliente verá «{f.tecnico.trim()}: {pesos(tecnico)} por día».</Texto> : null}
-      </Tarjeta>
-      <Tarjeta>
-        <Texto v="subtitulo">Ubicación de la bodega</Texto>
-        <Texto v="fino">
-          Es el punto donde los clientes ven tu compañía en el mapa al buscar y explorar equipos, y desde donde se calculan la distancia y el
-          transporte.
-        </Texto>
-        <Campo etiqueta="Dirección de la bodega" placeholder="Cra. 43A # 1-50" value={f.direccion} onChangeText={(v) => cambiar({ direccion: v })} />
-        <Texto peso={500} style={{ fontSize: 14 }}>
-          Zona
-        </Texto>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-          {ZONAS.map((z) => (
-            <Chip
-              key={z.id}
-              texto={z.nombre}
-              activo={f.zona === z.id}
-              onPress={() => {
-                // Lleva el mapa a esa zona; si el pin está lejos, lo pone en su centro para que lo ajustes.
-                const centro = { lat: z.lat, lng: z.lng };
-                const lejos = !f.pin || distanciaKm(f.pin, centro) > 3;
-                cambiar({ zona: z.id, pin: lejos ? centro : f.pin });
-                setFoco(lejos ? centro : f.pin);
-              }}
-            />
-          ))}
-        </ScrollView>
-        <Texto v="fino">Toca el mapa o arrastra el pin hasta la entrada de tu bodega.</Texto>
-        <Mapa
-          centro={f.pin ?? MEDELLIN}
-          delta={f.pin ? 0.03 : 0.18}
-          pin={f.pin}
-          foco={foco}
-          onPin={(p) => cambiar({ pin: p, zona: zonaCercana(p) })}
-          style={{ height: 260, borderRadius: 14 }}
-        />
-        {!f.pin ? <Texto v="fino">Todavía no has ubicado tu bodega: elige la zona y luego toca el punto exacto.</Texto> : null}
-        <Campo etiqueta="Horario (opcional)" placeholder="Lun a sáb, 8 a. m. – 6 p. m." value={f.horario} onChangeText={(v) => cambiar({ horario: v })} />
+      <Encabezado titulo="Generalidades" sub="Lo básico de tu compañía: cómo te contactan, dónde estás y cómo entregas." />
+      {/* Una sola tarjeta con tres secciones separadas por líneas, para no perderse entre cajas. */}
+      <Tarjeta style={{ gap: 0, padding: 0 }}>
+        <Seccion titulo="Contacto" ayuda="Aquí te escriben los clientes que piden cotización.">
+          <Campo etiqueta="WhatsApp" keyboardType="phone-pad" placeholder="300 123 4567" value={f.whatsapp} onChangeText={(v) => cambiar({ whatsapp: v })} autoComplete="tel" />
+        </Seccion>
+        <Seccion titulo="Bodega" ayuda="Es el punto que ven los clientes en el mapa; desde aquí se calcula la distancia." linea>
+          <Campo etiqueta="Dirección" placeholder="Cra. 43A # 1-50" value={f.direccion} onChangeText={(v) => cambiar({ direccion: v })} />
+          <Texto peso={500} style={{ fontSize: 14 }}>
+            Zona
+          </Texto>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+            {ZONAS.map((z) => (
+              <Chip
+                key={z.id}
+                texto={z.nombre}
+                activo={f.zona === z.id}
+                onPress={() => {
+                  // Lleva el mapa a esa zona; si el pin está lejos, lo pone en su centro para que lo ajustes.
+                  const centro = { lat: z.lat, lng: z.lng };
+                  const lejos = !f.pin || distanciaKm(f.pin, centro) > 3;
+                  cambiar({ zona: z.id, pin: lejos ? centro : f.pin });
+                  setFoco(lejos ? centro : f.pin);
+                }}
+              />
+            ))}
+          </ScrollView>
+          <Mapa
+            centro={f.pin ?? MEDELLIN}
+            delta={f.pin ? 0.03 : 0.18}
+            pin={f.pin}
+            foco={foco}
+            onPin={(p) => cambiar({ pin: p, zona: zonaCercana(p) })}
+            style={{ height: 220, borderRadius: 14 }}
+          />
+          <Texto v="fino">{f.pin ? "Arrastra el pin hasta la entrada de tu bodega." : "Elige la zona y toca el punto exacto de tu bodega."}</Texto>
+          <Campo etiqueta="Horario (opcional)" placeholder="Lun a sáb, 8 a. m. – 6 p. m." value={f.horario} onChangeText={(v) => cambiar({ horario: v })} />
+        </Seccion>
+        <Seccion titulo="Entregas y técnico" ayuda="El cliente ve estos valores al armar su rider; el valor final lo acuerdan contigo." linea>
+          <CamposEntrega f={f} cambiar={cambiar} />
+          {f.tecnico.trim() && tecnico > 0 ? <Texto v="fino">El cliente verá «{f.tecnico.trim()}: {pesos(tecnico)} por día».</Texto> : null}
+        </Seccion>
       </Tarjeta>
       {error ? <Aviso tono="mal" texto={error} /> : null}
-      {guardado ? <Aviso tono="ok" texto="Listo: tus tarifas quedaron guardadas." /> : null}
-      <Boton titulo="Guardar tarifas" bloque cargando={ocupado} onPress={guardar} />
+      {guardado ? <Aviso tono="ok" texto="Listo: tus cambios quedaron guardados." /> : null}
+      <Boton titulo="Guardar cambios" bloque cargando={ocupado} onPress={guardar} />
     </Pantalla>
   );
 }
