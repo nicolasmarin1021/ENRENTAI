@@ -1,11 +1,13 @@
-import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import { useEffect, useImperativeHandle, useRef, useState, type ComponentType, type Ref } from "react";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { WebView as WebViewOriginal, type WebViewMessageEvent, type WebViewProps } from "react-native-webview";
 import type { Punto } from "@/lib/geo";
-import { color, fuente } from "@/tema";
+import { color } from "@/tema";
+import { HTML_MAPA } from "./mapa-html";
 
-// Mapa de Medellín (en el iPhone usa Apple Maps; en Android, Google Maps), al estilo de Airbnb:
-// cada lugar es una píldora blanca con su precio o su nombre; la elegida se pone oscura.
+// Mapa de Medellín, igual en iPhone y Android: un mapa abierto (OpenStreetMap, con el estilo de CARTO)
+// dibujado con Leaflet dentro de una vista web. No necesita claves de Google ni de Apple.
+// Al estilo de Airbnb: cada lugar es una píldora blanca con su texto; la elegida se pone oscura.
 // En el navegador del computador se usa mapa.web.tsx (un mapa simplificado para revisar la app).
 
 export type Nivel = "alto" | "medio" | "nada";
@@ -31,17 +33,24 @@ export type PropsMapa = {
 
 export type MapaRef = { encuadrar: () => void };
 
+// Los tipos de react-native-webview no encajan con esta versión de React: se describe lo que se usa.
+type MetodosWeb = { injectJavaScript: (js: string) => void };
+const WebView = WebViewOriginal as unknown as ComponentType<WebViewProps & { ref?: Ref<MetodosWeb> }>;
+
 const MARGEN_BASE: Margen = { top: 40, right: 40, bottom: 40, left: 40 };
+
+// Lo que el mapa web le avisa a la app.
+type Aviso = { t: "listo" } | { t: "marcador"; id: string } | { t: "fondo" } | { t: "pin"; lat: number; lng: number };
 
 export function Mapa({
   centro,
   delta = 0.14,
   marcadores = [],
-  activo,
+  activo = null,
   onMarcador,
   onFondo,
-  lugar,
-  pin,
+  lugar = null,
+  pin = null,
   onPin,
   foco,
   ajustar = false,
@@ -49,123 +58,82 @@ export function Mapa({
   style,
   ref,
 }: PropsMapa & { ref?: Ref<MapaRef> }) {
-  const mapa = useRef<MapView>(null);
-  const puntos = [...marcadores.map((m) => ({ latitude: m.lat, longitude: m.lng })), ...(lugar ? [{ latitude: lugar.lat, longitude: lugar.lng }] : [])];
+  const web = useRef<MetodosWeb>(null);
+  const [listo, setListo] = useState(false);
+  // Las funciones más recientes (el mapa web avisa en cualquier momento).
+  const acciones = useRef({ onMarcador, onFondo, onPin });
+  useEffect(() => {
+    acciones.current = { onMarcador, onFondo, onPin };
+  });
 
-  function encuadrar(animado = true) {
-    if (puntos.length > 1) mapa.current?.fitToCoordinates(puntos, { edgePadding: margen, animated: animado });
-    else if (puntos.length === 1)
-      mapa.current?.animateToRegion({ ...puntos[0], latitudeDelta: 0.05, longitudeDelta: 0.05 }, animado ? 350 : 0);
-  }
+  const enviar = (msg: object) => web.current?.injectJavaScript(`window.enrenta && window.enrenta.recibir(${JSON.stringify(msg)}); true;`);
 
-  useImperativeHandle(ref, () => ({ encuadrar: () => encuadrar(true) }));
+  // Lo que se dibuja: se manda de nuevo cada vez que cambia.
+  const estado = JSON.stringify({ marcadores, activo, lugar, pin, editable: !!onPin, margen });
+  useEffect(() => {
+    if (listo) enviar({ t: "estado", ...JSON.parse(estado) });
+  }, [estado, listo]);
+
+  useImperativeHandle(ref, () => ({ encuadrar: () => enviar({ t: "encuadrar", animado: true }) }));
 
   // Vuela hasta el lugar o la compañía elegida, sin cambiar el zoom.
   useEffect(() => {
-    if (!foco) return;
-    mapa.current?.animateCamera({ center: { latitude: foco.lat, longitude: foco.lng } }, { duration: 350 });
-  }, [foco?.lat, foco?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (listo && foco) enviar({ t: "volar", lat: foco.lat, lng: foco.lng });
+  }, [foco?.lat, foco?.lng, listo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function alRecibir(e: WebViewMessageEvent) {
+    let m: Aviso;
+    try {
+      m = JSON.parse(e.nativeEvent.data) as Aviso;
+    } catch {
+      return;
+    }
+    const a = acciones.current;
+    if (m.t === "listo") {
+      setListo(true);
+      enviar({ t: "estado", ...JSON.parse(estado) });
+      if (ajustar) enviar({ t: "encuadrar", animado: false });
+    } else if (m.t === "marcador") a.onMarcador?.(m.id);
+    else if (m.t === "pin") a.onPin?.({ lat: m.lat, lng: m.lng });
+    else if (m.t === "fondo") {
+      if (a.onPin) return; // en el mapa del pin, el toque ya movió el pin
+      a.onFondo?.();
+    }
+  }
+
+  // Zoom inicial a partir de cuánto se quiere ver (en grados) alrededor del centro.
+  const zoom = Math.max(3, Math.min(17, Math.log2(360 / Math.max(delta, 0.002))));
+  const html = HTML_MAPA.replace("__INICIO__", JSON.stringify({ lat: centro.lat, lng: centro.lng, zoom }));
+  // El HTML se arma una sola vez (si cambiara, el mapa se recargaría).
+  const [fuente] = useState(() => ({ html, baseUrl: "https://enrenta.co/" }));
 
   return (
     <View style={[estilos.caja, style]}>
-      <MapView
-        ref={mapa}
-        style={StyleSheet.absoluteFill}
-        initialRegion={{ latitude: centro.lat, longitude: centro.lng, latitudeDelta: delta, longitudeDelta: delta }}
-        onMapReady={() => {
-          if (ajustar) encuadrar(false);
-        }}
-        showsPointsOfInterests={false}
-        showsCompass={false}
-        toolbarEnabled={false}
-        onPress={(e) => {
-          if (e.nativeEvent.action === "marker-press") return;
-          if (onPin) onPin({ lat: e.nativeEvent.coordinate.latitude, lng: e.nativeEvent.coordinate.longitude });
-          else onFondo?.();
-        }}
-      >
-        {lugar ? (
-          <Marker coordinate={{ latitude: lugar.lat, longitude: lugar.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false} zIndex={2}>
-            <View style={estilos.show}>
-              <View style={estilos.showPunto} />
-            </View>
-          </Marker>
-        ) : null}
-        {marcadores.map((m) => {
-          const sel = m.id === activo;
-          const apagado = m.nivel === "nada";
-          return (
-            <Marker
-              // La clave cambia con el estado para que el iPhone vuelva a dibujar la píldora.
-              key={`${m.id}-${m.texto}-${m.nivel ?? ""}-${sel ? 1 : 0}`}
-              coordinate={{ latitude: m.lat, longitude: m.lng }}
-              onPress={() => onMarcador?.(m.id)}
-              tracksViewChanges={false}
-              zIndex={sel ? 20 : apagado ? 1 : 5}
-            >
-              {m.forma === "punto" && !sel ? (
-                <View style={estilos.punto} />
-              ) : (
-                <View style={[estilos.pildora, sel && estilos.pildoraSel, apagado && !sel && estilos.pildoraApagada]}>
-                  <Text style={[estilos.pildoraTexto, sel && { color: "#FFFFFF" }, apagado && !sel && { color: color.suave }]}>{m.texto}</Text>
-                </View>
-              )}
-            </Marker>
-          );
-        })}
-        {pin ? (
-          <Marker
-            coordinate={{ latitude: pin.lat, longitude: pin.lng }}
-            draggable
-            pinColor={color.acento}
-            onDragEnd={(e) => onPin?.({ lat: e.nativeEvent.coordinate.latitude, lng: e.nativeEvent.coordinate.longitude })}
-          />
-        ) : null}
-      </MapView>
+      <WebView
+        ref={web}
+        source={fuente}
+        originWhitelist={["*"]}
+        onMessage={alRecibir}
+        style={estilos.web}
+        containerStyle={StyleSheet.absoluteFill}
+        scrollEnabled={false}
+        bounces={false}
+        overScrollMode="never"
+        nestedScrollEnabled
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        setSupportMultipleWindows={false}
+        javaScriptEnabled
+        domStorageEnabled
+        cacheEnabled
+        // Los enlaces del mapa (créditos de OpenStreetMap) no abren nada dentro de la app.
+        onShouldStartLoadWithRequest={(r: { url: string }) => r.url === "about:blank" || r.url.startsWith("https://enrenta.co")}
+      />
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
   caja: { overflow: "hidden", backgroundColor: "#E9EEF2" },
-  pildora: {
-    paddingHorizontal: 11,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "rgba(16,24,40,0.08)",
-    shadowColor: "#101828",
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
-  },
-  pildoraSel: { backgroundColor: color.tinta, borderColor: color.tinta, transform: [{ scale: 1.08 }] },
-  pildoraApagada: { backgroundColor: "#F1F2F5" },
-  pildoraTexto: { fontFamily: fuente[700], fontSize: 13.5, color: color.tinta },
-  punto: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 4,
-    borderColor: color.tinta,
-    shadowColor: "#101828",
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 3,
-  },
-  show: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "rgba(59,91,219,0.22)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  showPunto: { width: 14, height: 14, borderRadius: 7, backgroundColor: color.acento, borderWidth: 2.5, borderColor: "#FFFFFF" },
+  web: { flex: 1, backgroundColor: color.superficie2 },
 });
