@@ -26,6 +26,9 @@ const ENCABEZADOS = [
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Solo en desarrollo: deja abrir la web desde la IP del computador (192.168.x.x), no solo desde localhost.
+  // Sin esto, el navegador muestra la página pero los botones no hacen nada (no carga el JavaScript).
+  allowedDevOrigins: ["127.0.0.1", "192.168.*.*", "10.*.*.*"],
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: ENCABEZADOS }];
