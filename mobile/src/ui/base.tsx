@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import * as Haptics from "expo-haptics";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,9 +20,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SelectorModo } from "@/componentes/selector-modo";
 import { color, fuente, margen, radio, sombra, type Peso } from "@/tema";
 import { Logo } from "./marca";
+import { Aparece, movimientoReducido, NATIVO, tramo, useAparecer, useBucle, usePresion, useSalto, useTemblor } from "./movimiento";
+
+const PressableAnimado = Animated.createAnimatedComponent(Pressable);
+const tocarSuave = () => {
+  if (NATIVO) Haptics.selectionAsync().catch(() => {});
+};
 
 // Piezas de interfaz de ENRENTA: se usan en todas las pantallas para que la app se vea igual
 // en todas partes (equivalen a las clases .btn, .card, .field, .tag… de la web).
+// Todas tienen movimiento (ui/movimiento.tsx): aparecen, responden al tocar y saltan al cambiar.
 
 // ---------------------------------------------------------------- Texto
 type Variante = "titulo" | "subtitulo" | "cuerpo" | "fino" | "etiqueta";
@@ -83,17 +91,28 @@ export function Boton({
 }) {
   const t = BOTONES[tipo];
   const apagado = deshabilitado || cargando;
+  const { escala, onPressIn, onPressOut } = usePresion(tipo === "enlace" ? 0.94 : 0.96);
+  // Al terminar de cargar (p. ej. «Guardando…» → listo), el botón da un pequeño salto.
+  const salto = useSalto(cargando ? "cargando" : "listo", 0.92);
+  const tocar = onPress
+    ? () => {
+        if (NATIVO && (tipo === "primario" || tipo === "whatsapp")) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        onPress();
+      }
+    : undefined;
   return (
-    <Pressable
+    <PressableAnimado
       accessibilityRole="button"
       accessibilityState={{ disabled: apagado, busy: cargando }}
-      onPress={onPress}
+      onPress={tocar}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       disabled={apagado}
-      style={({ pressed }) => [
+      style={[
         estilos.boton,
         chico && estilos.botonChico,
         tipo === "enlace" && estilos.botonEnlace,
-        { backgroundColor: t.fondo, opacity: apagado ? 0.5 : pressed ? 0.82 : 1 },
+        { backgroundColor: t.fondo, opacity: apagado ? 0.5 : 1, transform: [{ scale: Animated.multiply(escala, salto) }] },
         t.borde ? { borderWidth: 1, borderColor: t.borde } : null,
         bloque ? { alignSelf: "stretch" } : { alignSelf: "flex-start" },
         style,
@@ -101,13 +120,14 @@ export function Boton({
     >
       {cargando ? <ActivityIndicator size="small" color={t.texto} /> : icono}
       <Text style={[estilos.botonTexto, chico && { fontSize: 14 }, { color: t.texto }]}>{titulo}</Text>
-    </Pressable>
+    </PressableAnimado>
   );
 }
 
 // ---------------------------------------------------------------- Tarjeta
+// Aparece al mostrarse; si llegan varias juntas (una lista), entran en cascada.
 export function Tarjeta({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[estilos.tarjeta, style]}>{children}</View>;
+  return <Aparece style={[estilos.tarjeta, style]}>{children}</Aparece>;
 }
 
 // ---------------------------------------------------------------- Campo de texto
@@ -118,20 +138,40 @@ export function Campo({
   style,
   ...input
 }: TextInputProps & { etiqueta: string; ayuda?: string; error?: string }) {
+  // Al escribir, el campo se marca con el azul de la marca; si hay un error, tiembla.
+  const [foco, setFoco] = useState(false);
+  const x = useTemblor(error);
   return (
     <View style={[{ gap: 6 }, style as StyleProp<ViewStyle>]}>
       <Texto peso={500} style={{ fontSize: 14 }}>
         {etiqueta}
       </Texto>
-      <TextInput
-        placeholderTextColor="#9AA0AE"
-        {...input}
-        style={[estilos.input, input.multiline && { minHeight: 88, textAlignVertical: "top", paddingTop: 12 }, error ? { borderColor: color.mal } : null]}
-      />
+      <Animated.View style={{ transform: [{ translateX: x }] }}>
+        <TextInput
+          placeholderTextColor="#9AA0AE"
+          {...input}
+          onFocus={(e) => {
+            setFoco(true);
+            input.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFoco(false);
+            input.onBlur?.(e);
+          }}
+          style={[
+            estilos.input,
+            input.multiline && { minHeight: 88, textAlignVertical: "top", paddingTop: 12 },
+            foco && estilos.inputFoco,
+            error ? { borderColor: color.mal } : null,
+          ]}
+        />
+      </Animated.View>
       {error ? (
-        <Texto v="fino" tono={color.mal}>
-          {error}
-        </Texto>
+        <Aparece retraso={0} desde="arriba">
+          <Texto v="fino" tono={color.mal}>
+            {error}
+          </Texto>
+        </Aparece>
       ) : ayuda ? (
         <Texto v="fino">{ayuda}</Texto>
       ) : null}
@@ -151,16 +191,27 @@ export function Chip({
   onPress?: () => void;
   icono?: ReactNode;
 }) {
+  const { escala, onPressIn, onPressOut } = usePresion(0.94);
+  const salto = useSalto(activo, 0.88);
   return (
-    <Pressable
+    <PressableAnimado
       accessibilityRole="button"
       accessibilityState={{ selected: activo }}
-      onPress={onPress}
-      style={({ pressed }) => [estilos.chip, activo && estilos.chipActivo, pressed && { opacity: 0.8 }]}
+      onPress={
+        onPress
+          ? () => {
+              tocarSuave();
+              onPress();
+            }
+          : undefined
+      }
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={[estilos.chip, activo && estilos.chipActivo, { transform: [{ scale: Animated.multiply(escala, salto) }] }]}
     >
       {icono}
       <Text style={[estilos.chipTexto, activo && { color: color.acento }]}>{texto}</Text>
-    </Pressable>
+    </PressableAnimado>
   );
 }
 
@@ -176,21 +227,36 @@ const TONOS: Record<Tono, { fondo: string; texto: string }> = {
 
 export function Etiqueta({ texto, tono = "" }: { texto: string; tono?: Tono }) {
   const t = TONOS[tono];
+  // Cuando cambia el estado («Enviada» → «Rentada»), la etiqueta da un salto.
+  const salto = useSalto(texto);
   return (
-    <View style={[estilos.etiqueta, { backgroundColor: t.fondo }]}>
+    <Animated.View style={[estilos.etiqueta, { backgroundColor: t.fondo, transform: [{ scale: salto }] }]}>
       <Text style={[estilos.etiquetaTexto, { color: t.texto }]}>{texto}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
 // ---------------------------------------------------------------- Aviso (mensaje en una caja)
 export function Aviso({ texto, tono = "acento", children }: { texto?: string; tono?: Tono; children?: ReactNode }) {
   const t = TONOS[tono];
+  // Aparece al mostrarse; los errores, además, tiemblan.
+  const v = useAparecer(0, 380);
+  const x = useTemblor(tono === "mal" ? texto || "error" : "");
   return (
-    <View style={[estilos.aviso, { backgroundColor: t.fondo }]} accessibilityRole={tono === "mal" ? "alert" : undefined}>
+    <Animated.View
+      style={[
+        estilos.aviso,
+        {
+          backgroundColor: t.fondo,
+          opacity: v,
+          transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }, { translateX: x }],
+        },
+      ]}
+      accessibilityRole={tono === "mal" ? "alert" : undefined}
+    >
       {texto ? <Text style={[estilos.avisoTexto, { color: tono === "" ? color.tinta : t.texto }]}>{texto}</Text> : null}
       {children}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -208,29 +274,41 @@ export function Cantidad({
   max?: number;
   nombre: string;
 }) {
+  // El número salta cada vez que cambia; los botones se hunden al tocarlos.
+  const salto = useSalto(valor, 0.7);
+  const menos = usePresion(0.86);
+  const mas = usePresion(0.86);
+  const cambiar = (n: number) => {
+    tocarSuave();
+    onCambio(n);
+  };
   return (
     <View style={estilos.cantidad} accessibilityLabel={`Cantidad de ${nombre}`}>
-      <Pressable
+      <PressableAnimado
         accessibilityRole="button"
         accessibilityLabel="Uno menos"
         disabled={valor <= min}
-        onPress={() => onCambio(Math.max(min, valor - 1))}
-        style={[estilos.cantBtn, valor <= min && { opacity: 0.35 }]}
+        onPress={() => cambiar(Math.max(min, valor - 1))}
+        onPressIn={menos.onPressIn}
+        onPressOut={menos.onPressOut}
+        style={[estilos.cantBtn, valor <= min && { opacity: 0.35 }, { transform: [{ scale: menos.escala }] }]}
         hitSlop={6}
       >
         <Text style={estilos.cantSigno}>−</Text>
-      </Pressable>
-      <Text style={estilos.cantValor}>{valor}</Text>
-      <Pressable
+      </PressableAnimado>
+      <Animated.Text style={[estilos.cantValor, { transform: [{ scale: salto }] }]}>{valor}</Animated.Text>
+      <PressableAnimado
         accessibilityRole="button"
         accessibilityLabel="Uno más"
         disabled={valor >= max}
-        onPress={() => onCambio(Math.min(max, valor + 1))}
-        style={[estilos.cantBtn, valor >= max && { opacity: 0.35 }]}
+        onPress={() => cambiar(Math.min(max, valor + 1))}
+        onPressIn={mas.onPressIn}
+        onPressOut={mas.onPressOut}
+        style={[estilos.cantBtn, valor >= max && { opacity: 0.35 }, { transform: [{ scale: mas.escala }] }]}
         hitSlop={6}
       >
         <Text style={estilos.cantSigno}>+</Text>
-      </Pressable>
+      </PressableAnimado>
     </View>
   );
 }
@@ -257,6 +335,8 @@ export function Pantalla({
 }) {
   const insets = useSafeAreaInsets();
   const web = Platform.OS === "web";
+  // La pantalla entra con un fundido; sus tarjetas, en cascada.
+  const entrada = useAparecer(0, 360);
   return (
     <View style={{ flex: 1, backgroundColor: color.fondo }}>
       {conPestanas ? (
@@ -267,10 +347,10 @@ export function Pantalla({
         </View>
       ) : null}
       {fijo ? <View style={estilos.fijo}>{fijo}</View> : null}
-      {lleno ? <View style={[{ flex: 1 }, style]}>{children}</View> : null}
+      {lleno ? <Animated.View style={[{ flex: 1, opacity: entrada }, style]}>{children}</Animated.View> : null}
       {lleno ? null : (
-      <ScrollView
-        style={{ flex: 1 }}
+      <Animated.ScrollView
+        style={{ flex: 1, opacity: entrada }}
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -290,7 +370,7 @@ export function Pantalla({
         }
       >
         {children}
-      </ScrollView>
+      </Animated.ScrollView>
       )}
     </View>
   );
@@ -300,10 +380,10 @@ export function Pantalla({
 export function Encabezado({ titulo, sub, derecha }: { titulo: string; sub?: string; derecha?: ReactNode }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
-      <View style={{ flex: 1, gap: 6 }}>
+      <Aparece retraso={0} desde="izquierda" style={{ flex: 1, gap: 6 }}>
         <Texto v="titulo">{titulo}</Texto>
         {sub ? <Texto v="fino" style={{ fontSize: 14.5, lineHeight: 20 }}>{sub}</Texto> : null}
-      </View>
+      </Aparece>
       {derecha}
     </View>
   );
@@ -333,8 +413,23 @@ export function Segmentos<T extends string>({
   valor: T;
   onCambio: (v: T) => void;
 }) {
+  // La pastilla blanca se desliza hasta la opción elegida.
+  const [ancho, setAncho] = useState(0);
+  const i = Math.max(0, opciones.findIndex((o) => o.id === valor));
+  const n = opciones.length;
+  const pos = useDeslizar(i);
+  const w = ancho ? (ancho - 6 - 2 * (n - 1)) / n : 0;
   return (
-    <View style={estilos.seg} accessibilityRole="radiogroup">
+    <View style={estilos.seg} accessibilityRole="radiogroup" onLayout={(e) => setAncho(e.nativeEvent.layout.width)}>
+      {w > 0 ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            estilos.segPastilla,
+            { width: w, transform: [{ translateX: pos.interpolate({ inputRange: [0, Math.max(1, n - 1)], outputRange: [0, Math.max(1, n - 1) * (w + 2)] }) }] },
+          ]}
+        />
+      ) : null}
       {opciones.map((o) => {
         const activo = o.id === valor;
         return (
@@ -343,8 +438,11 @@ export function Segmentos<T extends string>({
             accessibilityRole="radio"
             accessibilityState={{ selected: activo, disabled: o.deshabilitado }}
             disabled={o.deshabilitado}
-            onPress={() => onCambio(o.id)}
-            style={[estilos.segItem, activo && estilos.segActivo, o.deshabilitado && { opacity: 0.4 }]}
+            onPress={() => {
+              if (!activo) tocarSuave();
+              onCambio(o.id);
+            }}
+            style={[estilos.segItem, activo && !w && estilos.segActivo, o.deshabilitado && { opacity: 0.4 }]}
           >
             <Text style={[estilos.segTexto, activo && { color: color.tinta }]} numberOfLines={1}>
               {o.texto}
@@ -356,13 +454,38 @@ export function Segmentos<T extends string>({
   );
 }
 
+// Tres puntos con los colores del cable de la marca que saltan uno tras otro.
 export function Cargando({ texto = "Cargando…" }: { texto?: string }) {
+  const t = useBucle(1100, 0);
   return (
-    <View style={{ paddingVertical: 40, alignItems: "center", gap: 12 }}>
-      <ActivityIndicator color={color.acento} />
+    <View style={{ paddingVertical: 40, alignItems: "center", gap: 14 }} accessibilityRole="progressbar" accessibilityLabel={texto}>
+      <View style={{ flexDirection: "row", gap: 7 }}>
+        {[color.acento, "#A08BF6", color.coral].map((c, k) => (
+          <Animated.View
+            key={c}
+            style={[
+              estilos.punto,
+              {
+                backgroundColor: c,
+                transform: [{ translateY: tramo(t, [0, 0.1 + k * 0.12, 0.25 + k * 0.12, 0.4 + k * 0.12, 1], [0, 0, -8, 0, 0]) }],
+              },
+            ]}
+          />
+        ))}
+      </View>
       <Texto v="fino">{texto}</Texto>
     </View>
   );
+}
+
+// Posición animada (con resorte) de la opción elegida en Segmentos.
+function useDeslizar(i: number) {
+  const [pos] = useState(() => new Animated.Value(i));
+  useEffect(() => {
+    if (movimientoReducido()) pos.setValue(i);
+    else Animated.spring(pos, { toValue: i, useNativeDriver: NATIVO, damping: 18, stiffness: 220, mass: 0.8 }).start();
+  }, [i, pos]);
+  return pos;
 }
 
 export const estilos = StyleSheet.create({
@@ -438,5 +561,8 @@ export const estilos = StyleSheet.create({
   seg: { flexDirection: "row", backgroundColor: color.superficie2, borderRadius: radio.pildora, padding: 3, gap: 2 },
   segItem: { flex: 1, minHeight: 38, borderRadius: radio.pildora, alignItems: "center", justifyContent: "center", paddingHorizontal: 10 },
   segActivo: { backgroundColor: color.superficie, ...sombra, shadowOpacity: 0.12 },
+  segPastilla: { position: "absolute", top: 3, bottom: 3, left: 3, borderRadius: radio.pildora, backgroundColor: color.superficie, ...sombra, shadowOpacity: 0.12 },
+  inputFoco: { borderColor: color.acento, borderWidth: 1.5 },
+  punto: { width: 9, height: 9, borderRadius: 5 },
   segTexto: { fontFamily: fuente[500], fontSize: 14, color: color.suave },
 });

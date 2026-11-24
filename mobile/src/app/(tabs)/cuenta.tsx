@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { abrirAnuncio } from "@/componentes/anuncio-full";
 import { Avatar } from "@/componentes/perfil-cliente";
 import { completitud, leerMiPerfil, type PerfilCliente } from "@/lib/perfil";
 import { useSesion } from "@/lib/sesion";
@@ -112,6 +113,7 @@ export default function Cuenta() {
       <Tarjeta style={{ gap: 0, paddingVertical: 4 }}>
         <Opcion icono="bodega" texto="Pantalla de inicio" onPress={() => router.push("/bienvenida")} />
         <Opcion icono="info" texto="Cómo funciona la BETA" onPress={() => router.push("/como-funciona")} />
+        <Opcion icono="escudo" texto="Lo que viene: ENRENTA completa" onPress={abrirAnuncio} />
         {usuario ? <Opcion icono="salir" texto="Salir de mi cuenta" peligro onPress={() => void salir()} ultimo /> : null}
       </Tarjeta>
 

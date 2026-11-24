@@ -9,6 +9,7 @@ import { DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { AnuncioFull } from "@/componentes/anuncio-full";
 import { CatalogoProvider } from "@/lib/catalogo";
 import { GuardadosProvider } from "@/lib/guardados";
 import { PedidoProvider } from "@/lib/pedido";
@@ -62,6 +63,7 @@ export default function Raiz() {
               <Stack.Screen name="compania/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="equipo/[id]" options={{ presentation: "modal", headerShown: false }} />
               <Stack.Screen name="entrar" options={{ presentation: "modal", headerShown: false }} />
+              <Stack.Screen name="anuncio" options={{ headerShown: false, presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
               <Stack.Screen name="como-funciona" options={{ title: "Cómo funciona" }} />
               <Stack.Screen name="registro" options={{ title: "Registrar compañía" }} />
               <Stack.Screen name="perfil" options={{ title: "Tu perfil" }} />
@@ -71,6 +73,8 @@ export default function Raiz() {
               <Stack.Screen name="mensajes" options={{ title: "Mensajes" }} />
               <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
             </Stack>
+            {/* Anuncio de lo que trae ENRENTA completa: sale una vez al entrar (componentes/anuncio-full.tsx). */}
+            <AnuncioFull />
           </ThemeProvider>
           </GuardadosProvider>
         </PedidoProvider>
