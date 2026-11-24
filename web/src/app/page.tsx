@@ -39,7 +39,7 @@ function Icon({ d }: { d: string }) {
 
 export default function Inicio() {
   return (
-    <div className={`${inicio.inicio} ${mono.variable}`}>
+    <div className={`portada ${inicio.inicio} ${mono.variable}`}>
       <section className={styles.landing} aria-label="Inicio">
         <div className={styles.flotantes} aria-hidden="true">
           {FLOTANTES.map((f, i) => (

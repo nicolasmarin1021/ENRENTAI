@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AbrirAnuncio, AnuncioFull } from "@/components/anuncio-full";
 import { Logo } from "@/components/brand";
+import { Movimiento } from "@/components/movimiento";
 import { SesionHdr } from "@/components/sesion-hdr";
 import "./globals.css";
 
@@ -43,6 +44,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </footer>
         {/* Anuncio de lo que trae ENRENTA completa: sale una vez al entrar. */}
         <AnuncioFull />
+        {/* Onda al tocar, barra de carga entre páginas y pulso al enviar (el resto del movimiento es CSS). */}
+        <Suspense fallback={null}>
+          <Movimiento />
+        </Suspense>
       </body>
     </html>
   );

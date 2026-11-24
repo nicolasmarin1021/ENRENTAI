@@ -1357,3 +1357,205 @@ a.foto { display: block; }
 .card.ga { padding: 0; gap: 0; }
 .ga > .ga-sec { display: grid; gap: 12px; padding: 18px 20px; }
 .ga > .ga-sec + .ga-sec { border-top: 1px solid var(--line); }
+
+/* ===========================================================================
+   Movimiento en toda la web
+   Cada página entra en cascada, los paneles aparecen al bajar, los botones responden al tocar
+   (la onda la pone components/movimiento.tsx, igual que la barra de carga) y los cambios de
+   estado (pestaña activa, opción elegida, mensaje nuevo, error, guardado…) se notan.
+   Reglas de la casa:
+   - Todo va dentro de «no-preference»: con «reducir movimiento» la web queda quieta.
+   - Se animan opacity y las propiedades sueltas translate / scale / rotate, nunca transform,
+     para no pisar los transform que ya usan el mapa, el aviso flotante o los pines.
+   - El estilo base es el estado final: la animación solo dice «de dónde viene».
+   - La portada (.portada) tiene sus propias animaciones y queda por fuera.
+   =========================================================================== */
+:root {
+  --m-sale: cubic-bezier(.2, .8, .2, 1);
+  --m-rebota: cubic-bezier(.3, 1.5, .5, 1);
+}
+
+/* Barra de carga al cambiar de página (components/movimiento.tsx). */
+.m-carga { position: fixed; z-index: 100; top: 0; left: 0; right: 0; height: 3px; pointer-events: none; opacity: 0; }
+.m-carga i {
+  display: block; height: 100%; transform-origin: left; scale: 0 1;
+  background: linear-gradient(90deg, var(--accent), #A08BF6 55%, var(--coral));
+  box-shadow: 0 0 10px rgba(160, 139, 246, .7);
+}
+.m-carga[data-estado="va"] { opacity: 1; }
+.m-carga[data-estado="va"] i { animation: m-carga 9s cubic-bezier(.1, .7, .2, 1) forwards; }
+.m-carga[data-estado="fin"] { opacity: 0; transition: opacity .3s .25s; }
+.m-carga[data-estado="fin"] i { scale: 1 1; transition: scale .25s ease-out; }
+
+/* La onda al tocar (components/movimiento.tsx). */
+.m-onda { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.m-onda i { position: absolute; border-radius: 50%; background: currentColor; opacity: 0; animation: m-onda .65s ease-out; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---- Cada página entra: el fondo aparece y sus bloques suben en cascada ---- */
+  .site-main > :not(.portada, dialog) { animation: m-aparece .45s ease-out backwards; }
+  .site-main > :not(.portada, dialog) > :not(dialog) { animation: m-sube .6s var(--m-sale) backwards; }
+  .site-main > :not(.portada) > :nth-child(2) { animation-delay: .06s; }
+  .site-main > :not(.portada) > :nth-child(3) { animation-delay: .12s; }
+  .site-main > :not(.portada) > :nth-child(4) { animation-delay: .18s; }
+  .site-main > :not(.portada) > :nth-child(5) { animation-delay: .24s; }
+  .site-main > :not(.portada) > :nth-child(6) { animation-delay: .3s; }
+  .site-main > :not(.portada) > :nth-child(7) { animation-delay: .36s; }
+  .site-main > :not(.portada) > :nth-child(n + 8) { animation-delay: .42s; }
+
+  /* ---- Paneles y filas de las listas: aparecen al bajar ---- */
+  @supports (animation-timeline: view()) {
+    .eq-item, .bk, .reserva, .caso, .resenas > li, .ex-item, .g-equipo, .pi, .thread, .lugar, .kpi, .side-card, .empty, .vacio {
+      animation: m-revela linear backwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry 65%;
+    }
+  }
+  @supports not (animation-timeline: view()) {
+    .eq-item, .bk, .reserva, .caso, .resenas > li, .ex-item, .g-equipo, .lugar, .kpi, .side-card, .empty, .vacio {
+      animation: m-sube .55s var(--m-sale) backwards;
+    }
+  }
+  /* Filas que se agregan (rider, sugerencias, chips): entran al aparecer. */
+  .sug-item, .rg-linea, .lista-items > li, .mini-list > li, .items-paso > li, .chips > * { animation: m-sube .4s var(--m-sale) backwards; }
+  .sug > :nth-child(2), .chips > :nth-child(2) { animation-delay: .04s; }
+  .sug > :nth-child(3), .chips > :nth-child(3) { animation-delay: .08s; }
+  .sug > :nth-child(4), .chips > :nth-child(4) { animation-delay: .12s; }
+  .sug > :nth-child(n + 5), .chips > :nth-child(n + 5) { animation-delay: .16s; }
+  /* Pasos de un asistente: el contenido nuevo entra desde la derecha. */
+  .wz-paso > * { animation: m-derecha .45s var(--m-sale) backwards; }
+  .wz-paso > :nth-child(2) { animation-delay: .06s; }
+  .wz-paso > :nth-child(n + 3) { animation-delay: .12s; }
+
+  /* ---- Al tocar: todo responde ---- */
+  .btn, .chip, .pcard, .sug-item, .thread, .tabs a, .role a, .subnav a, .seg-tabs a, .subpaneles a, .lugar, .seg label,
+  .acct-btn, .qty button, .cerrar, .anuncio-cerrar, .g-toque, .pi-row, .estrellas-input label, .corazon {
+    transition: translate .2s var(--m-sale), scale .15s ease, rotate .35s var(--m-sale), box-shadow .2s ease,
+      background-color .2s ease, color .2s ease;
+  }
+  .btn:not(:disabled):hover, .acct-btn:hover, .pcard:hover, .lugar:hover { translate: 0 -1px; }
+  .chip:hover { translate: 0 -1px; }
+  .thread:hover, .sug-item:hover, .acct-menu a:hover { translate: 3px 0; }
+  .acct-menu a { transition: translate .2s var(--m-sale), background-color .2s ease; }
+  .cerrar:hover, .anuncio-cerrar:hover { rotate: 90deg; }
+  .corazon:hover { scale: 1.08; }
+  .btn:not(:disabled):active, .chip:active, .pcard:active, .sug-item:active, .acct-btn:active, .qty button:not(:disabled):active,
+  .cerrar:active, .tabs a:active, .role a:active, .subnav a:active, .seg-tabs a:active, .subpaneles a:active, .lugar:active,
+  .seg label:active, .g-toque:active, .estrellas-input label:active, .corazon:active, .thread:active { scale: .96; }
+  .pi-row .pi-ico { transition: scale .2s var(--m-rebota), background-color .2s ease; }
+  .pi-row:hover .pi-ico { scale: 1.08; }
+  /* Mientras se envía un formulario, su botón late. */
+  .btn[data-m-enviando] { animation: m-enviando 1s ease-in-out infinite; }
+
+  /* ---- Cambios de estado: lo que se acaba de elegir da un pequeño salto ---- */
+  .tabs a[aria-current="page"], .subnav a[aria-current="page"], .seg-tabs a[aria-current="page"], .role a[aria-pressed="true"],
+  .chip[aria-pressed="true"], .pcard[aria-pressed="true"], .thread.on, .seg label:has(input:checked), .lugar:has(input:checked) {
+    animation: m-salta .42s var(--m-rebota);
+  }
+  .pasos li[aria-current="step"] .num, .pasos li.hecho .num, .progreso li.hecho span, .progreso li.actual { animation: m-salta .45s var(--m-rebota); }
+  .estrellas-input label.on { animation: m-estrella .45s var(--m-rebota) backwards; }
+  .estrellas-input label.on:nth-child(2) { animation-delay: .04s; }
+  .estrellas-input label.on:nth-child(3) { animation-delay: .08s; }
+  .estrellas-input label.on:nth-child(4) { animation-delay: .12s; }
+  .estrellas-input label.on:nth-child(5) { animation-delay: .16s; }
+  /* ♡ guardado: además del latido, una onda coral. */
+  .corazon.on { animation: m-onda-coral .6s ease-out; }
+  /* Pendientes por leer: la cuenta late suave. */
+  .count.hot { animation: m-pulso-azul 2.2s ease-out infinite; }
+  .kpi.alerta { animation: m-pulso-alerta 2.4s ease-in-out infinite; }
+
+  /* ---- Respuestas de una acción ---- */
+  .form-err { animation: m-error .5s ease-out; }
+  .form-ok { animation: m-salta .45s var(--m-rebota); }
+  .toast { animation: m-toast .5s var(--m-rebota) backwards; }
+  .site-main .pildora-vista.fija { animation: m-toast .5s .3s var(--m-rebota) backwards; }
+  .field input, .field select, .field textarea { transition: box-shadow .2s ease, background-color .2s ease; }
+
+  /* ---- Ventanas y menús ---- */
+  dialog[open]:not(.anuncio) { animation: m-ventana .42s cubic-bezier(.2, .9, .25, 1.04); }
+  dialog[open]:not(.anuncio)::backdrop { animation: m-aparece .3s ease; }
+  .dlg-body > * { animation: m-sube .45s var(--m-sale) backwards; }
+  .dlg-body > :nth-child(2) { animation-delay: .05s; }
+  .dlg-body > :nth-child(3) { animation-delay: .1s; }
+  .dlg-body > :nth-child(n + 4) { animation-delay: .15s; }
+  .acct-menu { transform-origin: top right; animation: m-menu .25s var(--m-sale); }
+  .pi.open .pi-body { animation: m-despliega .3s var(--m-sale); }
+
+  /* ---- Mapa ---- */
+  .mk { animation: m-marcador .5s var(--m-rebota) backwards; }
+  .mk:nth-child(3n + 2) { animation-delay: .07s; }
+  .mk:nth-child(3n) { animation-delay: .14s; }
+  .mk.activo { animation: m-marcador-activo 1.8s ease-out infinite; }
+  .mk-lugar .rombo, .mk-pin { animation: m-cae .6s var(--m-rebota) backwards; }
+  .mk-ruta, .mk-anillo { animation: m-aparece .4s .35s backwards; }
+  /* (con .site-main delante para ganarle a la regla de entrada de la página) */
+  .site-main .float.search-float { animation: m-baja .5s var(--m-sale) backwards; }
+  .site-main .float.strip { animation: m-sube .5s .1s var(--m-sale) backwards; }
+  .site-main .float.pop { animation: m-derecha .45s var(--m-sale) backwards; }
+
+  /* ---- Chat: cada mensaje llega desde su lado ---- */
+  .msg.me { transform-origin: 100% 100%; animation: m-burbuja-yo .38s var(--m-rebota) backwards; }
+  .msg.them { transform-origin: 0 100%; animation: m-burbuja-otro .38s var(--m-rebota) backwards; }
+  .msg.sys, .day-sep { animation: m-aparece .4s ease-out backwards; }
+
+  /* ---- Vacíos: el ícono flota ---- */
+  .empty > svg:first-child, .vacio-corazon { animation: m-flota 4s ease-in-out infinite; }
+
+  /* ---- Encabezado: sombra al bajar y el cable de la marca como barra de lectura ---- */
+  @supports (animation-timeline: scroll()) {
+    .hdr { animation: m-hdr linear both; animation-timeline: scroll(root block); animation-range: 0 140px; }
+    .hdr::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; pointer-events: none;
+      transform-origin: left; scale: 0 1;
+      background: linear-gradient(90deg, var(--accent), #A08BF6 55%, var(--coral));
+      animation: m-lectura linear both; animation-timeline: scroll(root block);
+    }
+  }
+  /* El cable del logo cambia de color al pasar el ratón. */
+  .brand .logo .l-cable { transition: stroke .3s ease; }
+  .brand:hover .logo .l-cable { animation: m-cable 2.4s linear infinite; }
+  .brand .beta { transition: scale .25s var(--m-rebota); }
+  .brand:hover .beta { scale: 1.08; }
+
+  @media (max-width: 760px) {
+    .site-main .float.pop { animation-name: m-sube; }
+  }
+}
+
+@keyframes m-carga { from { scale: 0 1; } 25% { scale: .5 1; } to { scale: .92 1; } }
+@keyframes m-onda { from { scale: 0; opacity: .2; } to { scale: 1; opacity: 0; } }
+@keyframes m-aparece { from { opacity: 0; } }
+@keyframes m-sube { from { opacity: 0; translate: 0 16px; } }
+@keyframes m-baja { from { opacity: 0; translate: 0 -14px; } }
+@keyframes m-derecha { from { opacity: 0; translate: 22px 0; } }
+@keyframes m-revela { from { opacity: 0; translate: 0 26px; scale: .985; } }
+@keyframes m-salta { from { scale: .9; } 60% { scale: 1.04; } }
+@keyframes m-estrella { from { scale: .5; rotate: -25deg; } 60% { scale: 1.25; } }
+@keyframes m-onda-coral { from { box-shadow: 0 0 0 0 rgba(255, 122, 89, .55); } to { box-shadow: 0 0 0 14px rgba(255, 122, 89, 0); } }
+@keyframes m-pulso-azul { 0% { box-shadow: 0 0 0 0 rgba(59, 91, 219, .45); } 70%, 100% { box-shadow: 0 0 0 7px rgba(59, 91, 219, 0); } }
+@keyframes m-pulso-alerta { 50% { box-shadow: inset 0 0 0 1.5px var(--pin-mid), 0 0 0 5px rgba(240, 165, 42, .16), var(--shadow); } }
+@keyframes m-enviando { 50% { box-shadow: 0 0 0 6px rgba(59, 91, 219, .18), 0 10px 22px -10px rgba(59, 91, 219, .8); } }
+@keyframes m-error {
+  0% { opacity: 0; translate: 0 -4px; }
+  20% { opacity: 1; translate: -6px 0; }
+  40% { translate: 5px 0; }
+  60% { translate: -3px 0; }
+  80% { translate: 2px 0; }
+  100% { translate: 0 0; }
+}
+@keyframes m-toast { from { opacity: 0; translate: 0 24px; scale: .94; } }
+@keyframes m-ventana { from { opacity: 0; translate: 0 18px; scale: .96; } }
+@keyframes m-menu { from { opacity: 0; translate: 0 -6px; scale: .95; } }
+@keyframes m-despliega { from { opacity: 0; translate: 0 -8px; } }
+@keyframes m-marcador { from { opacity: 0; scale: .3; } }
+@keyframes m-marcador-activo {
+  0% { box-shadow: 0 0 0 3px var(--ink), 0 0 0 3px rgba(30, 34, 48, .35), 0 8px 18px -4px rgba(16, 24, 40, .5); }
+  100% { box-shadow: 0 0 0 3px var(--ink), 0 0 0 16px rgba(30, 34, 48, 0), 0 8px 18px -4px rgba(16, 24, 40, .5); }
+}
+@keyframes m-cae { from { opacity: 0; translate: 0 -22px; } 60% { opacity: 1; translate: 0 3px; } }
+@keyframes m-burbuja-yo { from { opacity: 0; scale: .8; translate: 10px 6px; } }
+@keyframes m-burbuja-otro { from { opacity: 0; scale: .8; translate: -10px 6px; } }
+@keyframes m-flota { 50% { translate: 0 -6px; } }
+@keyframes m-hdr { to { box-shadow: 0 1px 0 rgba(16, 24, 40, .05), 0 12px 30px -18px rgba(16, 24, 40, .35); } }
+@keyframes m-lectura { to { scale: 1 1; } }
+@keyframes m-cable { 0%, 100% { stroke: var(--accent); } 33% { stroke: #A08BF6; } 66% { stroke: var(--coral); } }
