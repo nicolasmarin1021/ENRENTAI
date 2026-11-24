@@ -1,108 +1,122 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AbrirAnuncio } from "@/components/anuncio-full";
-import { ListaNovedades } from "@/components/novedades";
+import { VieneFull } from "@/components/inicio/viene-full";
+import { Ico, ICONOS, v } from "@/components/inicio/piezas";
+import s from "./como.module.css";
 
 export const metadata: Metadata = {
   title: "Cómo funciona la BETA",
-  description: "ENRENTA BETA conecta a quien necesita equipos de audio y RF con las compañías que los rentan en Medellín.",
+  description: "ENRENTA BETA conecta a quien necesita equipos para espectáculos con las compañías que los rentan en Medellín.",
 };
+
+const CLIENTE = [
+  { t: "Arma tu rider", x: "Elige qué necesitas, las fechas y el lugar del show. El mapa te muestra las compañías con equipo libre." },
+  { t: "Cotiza por WhatsApp", x: "Con un clic se abre WhatsApp con tu rider, fechas y lugar ya escritos." },
+  { t: "Acuerda con la compañía", x: "Precio final, forma de pago, entrega y recogida." },
+  { t: "Queda apartado", x: "Cuando la compañía marca tu solicitud como rentada, el equipo queda reservado para ti." },
+];
+
+const COMPANIA = [
+  { t: "Registra tu compañía", x: "Con tu WhatsApp, que es donde te llegan las cotizaciones." },
+  { t: "Publica tu inventario", x: "Fotos, unidades y precio por día, más tus tarifas de transporte y técnico." },
+  { t: "Responde y aparta", x: "Cuando cierres el trato, marca la solicitud como rentada para apartar el equipo en tu agenda." },
+];
+
+const CONDICIONES = [
+  { ico: ICONOS.escudo, t: "ENRENTA no cobra ni recibe pagos", x: "El alquiler y cualquier garantía se acuerdan y se pagan directamente entre cliente y compañía." },
+  { ico: ICONOS.pdf, t: "No somos parte del contrato", x: "Precio, horarios, estado del equipo, daños y faltantes los acuerdan cliente y compañía." },
+  { ico: ICONOS.lupa, t: "Los precios son de referencia", x: "Los publica cada compañía y pueden cambiar en la cotización final." },
+  { ico: ICONOS.chat, t: "Tus datos", x: "El WhatsApp de una compañía solo se entrega a quien le pide cotización, y ella ve tu número. Usamos tus datos solo para que ENRENTA funcione." },
+];
+
+function Pasos({ lista }: { lista: { t: string; x: string }[] }) {
+  return (
+    <ol className={s.pasos}>
+      {lista.map((p, i) => (
+        <li key={p.t} style={v({ "--i": i })}>
+          <span className={s.num}>{i + 1}</span>
+          <span className={s.txt}>
+            <b>{p.t}</b>
+            <span>{p.x}</span>
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 // Reglas de la BETA (modelo de conexión). Texto provisional mientras dure la BETA.
 export default function ComoFunciona() {
   return (
-    <section className="page-mid como-pagina">
-      <div>
+    <div className={s.pagina}>
+      <header className={s.cab}>
         <span className="beta">BETA</span>
-        <h1 className="title-lg">Cómo funciona ENRENTA</h1>
+        <h1 className="title-xl">
+          Cómo funciona <em>ENRENTA</em>
+        </h1>
         <p className="lead">
-          ENRENTA conecta a quien necesita equipos de audio y RF para un show con las compañías que los rentan en Medellín.
-          Durante la BETA, el precio final y el pago se acuerdan directamente entre las dos partes por WhatsApp.
+          Conectamos a quien necesita equipos para un show con las compañías que los rentan en Medellín.
         </p>
-      </div>
-
-      <div className="card">
-        <h2>Si necesitas equipos</h2>
-        <ol className="pasos-como">
+        <ul className={s.claves} aria-label="Lo esencial de la BETA">
           <li>
-            <b>Busca y arma tu rider.</b> Elige qué necesitas, las fechas y el lugar del show. Verás en el mapa las compañías
-            con unidades libres en esas fechas y sus precios de referencia.
+            <Ico d={ICONOS.check} size={14} grueso={2.6} /> Gratis durante la BETA
           </li>
           <li>
-            <b>Pide la cotización por WhatsApp.</b> Con un clic se abre WhatsApp con tu rider, fechas y lugar ya escritos para
-            cada compañía.
-          </li>
-          <li>
-            <b>Acuerda con la compañía.</b> Precio final, forma de pago, horarios de entrega y recogida.
-          </li>
-          <li>
-            <b>Queda apartado.</b> Cuando la compañía marca tu solicitud como rentada, el equipo queda reservado para ti en su
-            agenda. Puedes seguirla en <Link href="/necesito/reservas">Mis solicitudes</Link>.
-          </li>
-        </ol>
-        <Link href="/explorar" className="btn primary" style={{ justifySelf: "start" }}>
-          Buscar equipos
-        </Link>
-      </div>
-
-      <div className="card">
-        <h2>Si tienes equipos</h2>
-        <ol className="pasos-como">
-          <li>
-            <b>Registra tu compañía y tu WhatsApp.</b> Ahí te llegan las cotizaciones.
-          </li>
-          <li>
-            <b>Publica tu inventario</b> con fotos, unidades y precio por día, y define tus tarifas de referencia: transporte
-            y técnico.
-          </li>
-          <li>
-            <b>Responde por WhatsApp</b> y, cuando cierres el trato, marca la solicitud como rentada para apartar el equipo
-            en tu agenda. Si no se concreta, márcala así.
-          </li>
-        </ol>
-        <Link href="/tengo" className="btn" style={{ justifySelf: "start" }}>
-          Publicar mi inventario
-        </Link>
-      </div>
-
-      <div className="card">
-        <h2>Condiciones de la BETA</h2>
-        <ul className="lista-proximamente">
-          <li>
-            <b>ENRENTA no cobra ni recibe pagos.</b> El alquiler y cualquier garantía que pida la compañía se acuerdan y se
-            pagan directamente entre el cliente y la compañía.
-          </li>
-          <li>
-            <b>ENRENTA no es parte del contrato de alquiler.</b> Las condiciones (precio, horarios, estado del equipo, daños y
-            faltantes) las acuerdan el cliente y la compañía.
-          </li>
-          <li>
-            <b>Los precios que ves son de referencia.</b> Los publica cada compañía y pueden cambiar en la cotización final.
-          </li>
-          <li>
-            <b>Tus datos.</b> El WhatsApp de una compañía solo se le entrega a quien le pide una cotización. Cuando escribes
-            por WhatsApp, la compañía ve tu número. Usamos tus datos solo para que ENRENTA funcione.
-          </li>
-          <li>
-            <b>Gratis durante la BETA</b> para clientes y compañías.
+            <Ico d={ICONOS.chat} size={14} /> El precio y el pago se acuerdan por WhatsApp
           </li>
         </ul>
-        <p className="fine">
-          Estas condiciones son provisionales mientras dure la BETA. Los términos completos y la política de tratamiento de
-          datos personales se publicarán antes del lanzamiento.
-        </p>
+      </header>
+
+      <div className={s.dos}>
+        <section className={`${s.panel} ${s.cliente}`} aria-labelledby="como-necesito">
+          <h2 id="como-necesito">
+            <span className={s.chipo}>
+              <Ico d={ICONOS.mic} size={18} />
+            </span>
+            Si necesitas equipos
+          </h2>
+          <Pasos lista={CLIENTE} />
+          <Link href="/explorar" className="btn primary">
+            Buscar equipos
+          </Link>
+        </section>
+
+        <section className={s.panel} aria-labelledby="como-tengo">
+          <h2 id="como-tengo">
+            <span className={s.chipo}>
+              <Ico d="M3 9.5 12 4l9 5.5V20H3zM7.5 20v-6.5h9V20M7.5 16.8h9" size={18} />
+            </span>
+            Si tienes equipos
+          </h2>
+          <Pasos lista={COMPANIA} />
+          <Link href="/tengo" className="btn">
+            Publicar mi inventario
+          </Link>
+        </section>
       </div>
 
-      <div className="card como-viene">
-        <span className="como-viene-pill">Próximamente</span>
-        <h2>Lo que viene en ENRENTA completa</h2>
-        <p className="muted">
-          La versión completa cuidará cada renta de principio a fin, con ENRENTA en el medio para que clientes y compañías
-          renten con tranquilidad.
+      <section aria-labelledby="como-condiciones">
+        <h2 id="como-condiciones" className={s.h2}>
+          Condiciones de la BETA
+        </h2>
+        <ul className={s.reglas}>
+          {CONDICIONES.map((c, i) => (
+            <li key={c.t} style={v({ "--i": i })}>
+              <span className={s.reglaIco}>
+                <Ico d={c.ico} size={20} grueso={1.7} />
+              </span>
+              <b>{c.t}</b>
+              <span>{c.x}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="fine">
+          Son provisionales mientras dure la BETA. Los términos completos y la política de tratamiento de datos personales se
+          publicarán antes del lanzamiento.
         </p>
-        <ListaNovedades className="en-pagina" />
-        <AbrirAnuncio texto="Ver el anuncio" />
-      </div>
-    </section>
+      </section>
+
+      <VieneFull />
+    </div>
   );
 }
