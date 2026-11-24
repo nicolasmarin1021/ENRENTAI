@@ -93,10 +93,10 @@ export function AnuncioFull() {
   );
 }
 
-// Enlace para volver a abrir el anuncio (pie de página).
-export function AbrirAnuncio({ texto = "Lo que viene" }: { texto?: string }) {
+// Enlace para volver a abrir el anuncio (pie de página y portada).
+export function AbrirAnuncio({ texto = "Lo que viene", className = "link-btn pie-anuncio" }: { texto?: string; className?: string }) {
   return (
-    <button type="button" className="link-btn pie-anuncio" onClick={() => window.dispatchEvent(new Event(EVENTO))}>
+    <button type="button" className={className} onClick={() => window.dispatchEvent(new Event(EVENTO))}>
       {texto}
     </button>
   );

@@ -1,20 +1,53 @@
+/* Portada: la primera pantalla («¿Qué te trae a ENRENTA?»).
+   Al cargar: el cable de la R se dibuja, el conector emite ondas y el resto entra en cascada.
+   Las secciones de abajo están en components/inicio/inicio.module.css. */
+
 .landing {
-  min-height: calc(100dvh - 220px);
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100dvh - 280px);
   display: grid;
   place-items: center;
-  padding-block: 12px;
+  align-content: center;
+  gap: 26px;
+  padding-block: 12px 0;
 }
 .card {
   width: min(560px, 100%);
   display: grid;
   gap: 18px;
 }
+.entra { animation: entra .7s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: var(--d, 0s); }
+
+/* El símbolo: el cable se dibuja y el conector emite ondas de radio. */
+.emisor { position: relative; isolation: isolate; justify-self: start; display: inline-grid; margin-left: -16px; }
+.emisor i {
+  position: absolute; z-index: -1; left: 13px; top: 3px; width: 45px; height: 45px; border-radius: 50%;
+  border: 1.5px solid var(--accent); opacity: 0;
+  animation: onda 3s 1.6s ease-out infinite;
+}
+.emisor i + i { animation-delay: 3.1s; }
+.simbolo path { stroke-dasharray: 420; animation: cable 1.6s .05s cubic-bezier(.65, 0, .25, 1) backwards; }
+.simbolo circle, .simbolo rect {
+  transform-box: fill-box; transform-origin: center;
+  animation: conecta .5s 1.05s cubic-bezier(.3, 1.6, .5, 1) backwards;
+}
+
+/* «ENRENTA» con un brillo que recorre las letras. */
+.card .titulo em {
+  background-image: linear-gradient(90deg, var(--accent) 0%, #A08BF6 25%, var(--coral) 50%, #A08BF6 75%, var(--accent) 100%);
+  background-size: 200% 100%;
+  animation: brillo 9s linear infinite;
+}
+
 .choices {
   display: grid;
   gap: 12px;
   margin-top: 6px;
 }
 .choice {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -24,15 +57,19 @@
   box-shadow: var(--shadow);
   color: var(--ink);
   text-decoration: none;
-  transition: transform .15s ease, box-shadow .15s ease;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+/* Un destello cruza la tarjeta al pasar el ratón. */
+.choice::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(59, 91, 219, .09) 50%, transparent 65%);
+  transform: translateX(-100%);
 }
 .choice:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 1px rgba(59, 91, 219, .35), 0 14px 30px -14px rgba(16, 24, 40, .22);
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px rgba(59, 91, 219, .35), 0 18px 34px -16px rgba(59, 91, 219, .45);
 }
-.simbolo {
-  margin-left: -16px;
-}
+.choice:hover::after { transform: translateX(100%); transition: transform .8s ease; }
 .choiceIco {
   width: 48px;
   height: 48px;
@@ -42,7 +79,9 @@
   place-items: center;
   background: var(--accent-soft);
   color: var(--accent);
+  transition: background .2s, color .2s, transform .3s cubic-bezier(.3, 1.6, .5, 1);
 }
+.choice:hover .choiceIco { background: var(--accent); color: #fff; transform: rotate(-8deg) scale(1.06); }
 .choiceTxt {
   flex: 1;
   min-width: 0;
@@ -51,7 +90,8 @@
 }
 .choiceTxt b { font-size: 18px; font-weight: 600; line-height: 1.25; }
 .choiceTxt span { font-size: 14.5px; color: var(--muted); }
-.go { font-size: 20px; color: var(--accent); }
+.go { font-size: 20px; color: var(--accent); transition: transform .25s ease; }
+.choice:hover .go { transform: translateX(5px); }
 .trust {
   list-style: none;
   margin: 0;
@@ -62,3 +102,53 @@
 }
 .trust li { display: flex; align-items: center; gap: 8px; font-size: 14.5px; }
 .trust svg { color: var(--ok); flex: none; }
+
+/* Categorías flotando a los lados (pantallas anchas). */
+.flotantes { position: absolute; inset: 0; z-index: -1; pointer-events: none; display: none; }
+.flota {
+  position: absolute; display: inline-flex; align-items: center; gap: 9px;
+  padding: 7px 14px 7px 7px; border-radius: 999px; white-space: nowrap;
+  background: rgba(255, 255, 255, .7); box-shadow: var(--soft);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  font-size: 13px; font-weight: 500; color: var(--ink);
+  animation:
+    entra .8s cubic-bezier(.2, .8, .2, 1) backwards,
+    flota 8s ease-in-out infinite;
+  animation-duration: .8s, var(--t, 8s);
+  animation-delay: var(--d, 0s), calc(var(--d, 0s) + .8s);
+}
+.flota b {
+  padding: 5px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+  font: 700 10px/1 var(--mono); letter-spacing: .08em;
+}
+.flota:nth-child(even) { animation-direction: normal, reverse; }
+@media (min-width: 1180px) {
+  .flotantes { display: block; }
+}
+
+/* Invitación a bajar. */
+.bajar {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 9px;
+  color: var(--muted); text-decoration: none;
+  font: 700 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase;
+  animation: entra .7s 1.2s backwards;
+}
+.bajar:hover { color: var(--accent); }
+.bajar i { position: relative; width: 22px; height: 34px; border-radius: 12px; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.bajar i::after {
+  content: ""; position: absolute; left: 50%; top: 7px; width: 4px; height: 7px; margin-left: -2px;
+  border-radius: 2px; background: var(--accent); animation: rueda 1.8s ease-in-out infinite;
+}
+
+@keyframes entra { from { opacity: 0; transform: translateY(16px); } }
+@keyframes cable { from { stroke-dashoffset: 420; } }
+@keyframes conecta { from { opacity: 0; transform: scale(.4); } }
+@keyframes onda { 0% { opacity: .55; transform: scale(1); } 100% { opacity: 0; transform: scale(3.4); } }
+@keyframes brillo { to { background-position: 200% 0; } }
+@keyframes flota { 50% { transform: translateY(-12px) rotate(-1.5deg); } }
+@keyframes rueda { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(11px); opacity: 0; } 100% { opacity: 0; } }
+
+@media (max-width: 560px) {
+  .landing { min-height: 0; padding-top: 0; }
+  .bajar { display: none; }
+}
