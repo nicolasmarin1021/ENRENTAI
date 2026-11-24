@@ -73,7 +73,7 @@ export function AnuncioFull() {
         </button>
       </div>
 
-      <ListaNovedades />
+      <ListaNovedades conVistas />
 
       <div className="anuncio-ft">
         <p className="fine">
