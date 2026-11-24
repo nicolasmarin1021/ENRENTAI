@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <span className="beta" title="Versión de prueba: ENRENTA conecta, el pago se acuerda por WhatsApp">
                 BETA
               </span>
-              <span className="brand-sub">Renta de audio y RF · Medellín</span>
+              <span className="brand-sub">Renta de equipos para espectáculos</span>
             </Link>
             {/* Interruptor de modo, cuenta y pestañas: dependen de la sesión y de la página. */}
             <Suspense fallback={null}>
