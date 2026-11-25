@@ -419,7 +419,7 @@ function FilaSolicitud({
       {pendiente ? (
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Boton titulo="No se concretó" tipo="secundario" chico onPress={onAbrir} deshabilitado={ocupado} style={{ flex: 1 }} />
-          <Boton titulo="Marcar rentada" chico cargando={ocupado} onPress={marcarRentada} style={{ flex: 1 }} />
+          <Boton titulo="Renta confirmada" chico cargando={ocupado} onPress={marcarRentada} style={{ flex: 1 }} />
         </View>
       ) : null}
       {error ? <Aviso tono="mal" texto={error} /> : null}

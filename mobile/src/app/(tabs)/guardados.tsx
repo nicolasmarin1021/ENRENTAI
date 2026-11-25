@@ -27,7 +27,7 @@ export default function Guardados() {
 
   return (
     <Pantalla>
-      <Encabezado titulo="Guardados" sub={vacio ? undefined : "Los equipos que marcaste con ♡ para tus próximos shows."} />
+      <Encabezado titulo="Futuras rentas" sub={vacio ? undefined : "Los equipos que marcaste con ♡ para tus próximos shows."} />
 
       {vacio ? (
         <Tarjeta style={{ alignItems: "center", paddingVertical: 32, gap: 14 }}>

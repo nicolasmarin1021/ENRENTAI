@@ -45,7 +45,7 @@ export default function Pestanas() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="panel" hidden={cliente}>
-        <NativeTabs.Trigger.Label>Panel</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Rentas</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} md="dashboard" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="inventario" hidden={cliente}>

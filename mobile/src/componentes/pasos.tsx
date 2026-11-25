@@ -380,7 +380,7 @@ export function PasoCuando({ onSiguiente, onAtras, avisos, refresco, cabeza }: M
     >
       {avisos}
       <View style={{ gap: 8 }}>
-        <Texto style={estilos.tituloPaso}>¿Cuándo los necesitas?</Texto>
+        <Texto style={estilos.tituloPaso}>¿Cuándo necesitas la renta?</Texto>
         <Texto v="fino" style={estilos.subPaso}>
           Se cobra un día por cada 24 horas entre la entrega y la recogida.
         </Texto>
@@ -452,13 +452,13 @@ export function PasoDonde({
       fijo={
         <>
           {cabeza}
-          <NavPasos paso={3} onAtras={onAtras} onSiguiente={continuar} textoSiguiente="Ver disponibilidad" />
+          <NavPasos paso={3} onAtras={onAtras} onSiguiente={continuar} textoSiguiente="¿Qué hay ENRENTA?" />
         </>
       }
     >
       {avisos}
       <View style={{ gap: 8 }}>
-        <Texto style={estilos.tituloPaso}>¿Dónde es el show?</Texto>
+        <Texto style={estilos.tituloPaso}>¿Dónde necesitas la renta?</Texto>
         <Texto v="fino" style={estilos.subPaso}>
           Con el lugar calculamos la distancia a cada bodega y el costo de entrega.
         </Texto>

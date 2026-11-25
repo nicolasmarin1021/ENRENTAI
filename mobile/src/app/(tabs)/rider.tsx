@@ -249,7 +249,7 @@ export default function Rider() {
 
               {falta(g) ? <Aviso tono="aviso" texto="Pediste más unidades de las que están libres en tus fechas. Ajusta las cantidades." /> : null}
               <Boton
-                titulo={usuario ? "Agendar" : "Entra para agendar"}
+                titulo={usuario ? "Rentar" : "Entra para rentar"}
                 tipo="primario"
                 bloque
                 icono={<Icono n="enviar" tam={18} tinta="#FFFFFF" grosor={2} />}

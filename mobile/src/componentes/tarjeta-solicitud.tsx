@@ -101,7 +101,7 @@ export function TarjetaSolicitud({
       </View>
 
       <View style={{ gap: 2 }}>
-        <Texto v="etiqueta">Compañía</Texto>
+        <Texto v="etiqueta">Proveedor</Texto>
         <Texto peso={600} style={{ fontSize: 16.5 }}>
           {r.companias?.nombre}
         </Texto>
@@ -372,7 +372,7 @@ function Responder({ id, onListo }: { id: string; onListo: () => void }) {
   return (
     <View style={{ gap: 8 }}>
       {error ? <Aviso tono="mal" texto={error} /> : null}
-      <Boton titulo="Marcar como rentada" bloque cargando={ocupado} onPress={() => responder(true)} />
+      <Boton titulo="Renta confirmada" bloque cargando={ocupado} onPress={() => responder(true)} />
       <Boton titulo="No se concretó" tipo="secundario" bloque deshabilitado={ocupado} onPress={() => setNoConcreto(true)} />
     </View>
   );

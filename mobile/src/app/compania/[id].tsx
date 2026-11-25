@@ -516,7 +516,7 @@ export default function Compania() {
               accessibilityRole="button"
             >
               <Texto peso={600} tono="#FFFFFF" style={{ fontSize: 16 }}>
-                {enRiderFoco ? "Ver tu rider" : conFechas && libresFoco === 0 ? "Sin unidades libres" : "Agregar al rider"}
+                {enRiderFoco ? "Ver tu rider" : conFechas && libresFoco === 0 ? "Sin unidades libres" : "Quiero rentar"}
               </Texto>
             </Pressable>
             <Texto v="fino" style={{ fontSize: 12 }} numberOfLines={1}>
@@ -566,7 +566,7 @@ export default function Compania() {
               accessibilityRole="button"
             >
               <Texto peso={600} tono="#FFFFFF" style={{ fontSize: 16 }}>
-                {deEsta ? "Ver tu rider" : refs.length ? "Agregar al rider" : "Ver equipos"}
+                {deEsta ? "Ver tu rider" : refs.length ? "Quiero rentar" : "Ver equipos"}
               </Texto>
             </Pressable>
             <Texto v="fino" style={{ fontSize: 12 }}>
